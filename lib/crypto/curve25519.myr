@@ -72,14 +72,14 @@ const fsum = {out, in
  * (note the order of the arguments!)
  */
 const fdiff = {out, in
-	for var i = 0; i < 10; i++
-		out[i] = (in[i] - out[i])
+	for var i = 0; i < 10; ++i
+		out[i] = in[i] - out[i]
 	;;
 }
 
 /* Multiply a number my a scalar: out = in * scalar */
 const fscalarproduct = {out, in, scalar
-	for var i = 0; i < 10; i++
+	for var i = 0; i < 10; ++i
 		out[i] = in[i] * scalar
 	;;
 }
@@ -194,22 +194,40 @@ const fproduct = {output, in2, in
 
 
 /* Reduce a long form to a short form by taking the input mod 2^255 - 19. */
-const freducedegree= {out
-	out[8] += 19 * out[18];
-	out[7] += 19 * out[17];
-	out[6] += 19 * out[16];
-	out[5] += 19 * out[15];
-	out[4] += 19 * out[14];
-	out[3] += 19 * out[13];
-	out[2] += 19 * out[12];
-	out[1] += 19 * out[11];
-	out[0] += 19 * out[10];
+const freducedegree= {output
+	output[8] += output[18] << 4;
+	output[8] += output[18] << 1;
+	output[8] += output[18];
+	output[7] += output[17] << 4;
+	output[7] += output[17] << 1;
+	output[7] += output[17];
+	output[6] += output[16] << 4;
+	output[6] += output[16] << 1;
+	output[6] += output[16];
+	output[5] += output[15] << 4;
+	output[5] += output[15] << 1;
+	output[5] += output[15];
+	output[4] += output[14] << 4;
+	output[4] += output[14] << 1;
+	output[4] += output[14];
+	output[3] += output[13] << 4;
+	output[3] += output[13] << 1;
+	output[3] += output[13];
+	output[2] += output[12] << 4;
+	output[2] += output[12] << 1;
+	output[2] += output[12];
+	output[1] += output[11] << 4;
+	output[1] += output[11] << 1;
+	output[1] += output[11];
+	output[0] += output[10] << 4;
+	output[0] += output[10] << 1;
+	output[0] += output[10];
 }
 
 /* Reduce all coeff of the short form in to be -2**25 <= x <= 2**25
  */
 const freducecoeff = {out
-	var over, over32
+	var over
 	var hi, sgn, round
 
 	out[10] = 0;
@@ -256,10 +274,6 @@ const freducecoeff = {out
 	 * So |over| will be no more than 1.
 	 * out[1] fits in 32 bits, so we can use div_s32_by_2_25 here.
 	 */
-	round = ((out[1] : int32) >> 31 : uint32) >> 7
-	over32 = (((out[1] : int32) + (round : int32)) >> 25 : int64)
-	out[1] -= over32 << 25
-	out[2] += over32
 
 	/*
 	 * Finally, out[0,1,3..9] are reduced, and out[2] is "nearly reduced":
@@ -384,37 +398,61 @@ const fexpand = {out, in
 
 }
 
+/* s32_eq returns 0xffffffff iff a == b and zero otherwise. */
+const s32_eq = {a, b
+	a = ~(a ^ b)
+	a &= a << 16
+	a &= a << 8
+	a &= a << 4
+	a &= a << 2
+	a &= a << 1
+	-> a >> 31
+}
+
+/* s32_gte returns 0xffffffff if a >= b and zero otherwise, where a and b are
+   both non-negative. */
+const s32_gte = {a, b
+	a -= b
+	/* a >= 0 iff a >= b. */
+	-> ~(a >> 31)
+}
+
 /* Take a fully reduced polynomial form number and contract it into a
  * little-endian, 32-byte array
  */
-const fcontract = {out : byte[:], in : int64[:]
+const fcontract = {out : byte[:], in_limbs : int64[:]
 	var mask, carry
-	for var j = 0; j < 2; j++
-		for var i = 0; i < 9; i++
+	var in : int32[10]
+
+	for var i = 0; i < 10; i++
+		in[i] = (in_limbs[i] : int32)
+	;;
+	for var j = 0; j < 2; ++j
+		for var i = 0; i < 9; ++i
 			if (i & 1) == 1
 			 	/* This calculation is a time-invariant way to make in[i] positive
 			 	 * by borrowing from the next-larger int64_t.
 			 	 */
-				mask = (in[i] : int32) >> 31
-				carry = -(((in[i] : int32) & mask) >> 25)
-				in[i+0] = ((in[i] : int32) + (carry << 25) : int64)
-				in[i+1] = ((in[i+1] : int32) - carry : int64)
+				mask = in[i] >> 31
+				carry = -((in[i] & mask) >> 25);
+				in[i+0] = in[i] + (carry << 25)
+				in[i+1] = in[i+1] - carry
 			else
-				mask = (in[i] : int32) >> 31
-				carry = -(((in[i] : int32) & mask) >> 26)
-				in[i+0] = ((in[i] : int32) + (carry << 26) : int64)
-				in[i+1] = ((in[i+1] : int32) - carry : int64)
+				mask = in[i] >> 31
+				carry = -((in[i] & mask) >> 26)
+				in[i+0] = in[i] + (carry << 26)
+				in[i+1] = in[i+1] - carry
 			;;
 		;;
-		mask = (in[9] : int32) >> 31
-		carry = -(((in[9] : int32) & mask) >> 25)
-		in[9] = ((in[9] : int32) + (carry << 25) : int64)
-		in[0] = ((in[0] : int32) - (carry * 19) : int64)
+		mask = in[9] >> 31
+		carry = -((in[9] & mask) >> 25)
+		in[9] = in[9] + (carry << 25)
+		in[0] = in[0] - (carry * 19)
 	;;
 
 	/* The first borrow-propagation pass above ended with every int64_t
 	   except (possibly) in[0] non-negative.
-	
+
 	   Since each in int64_t except in[0] is decreased by at most 1
 	   by a borrow-propagation pass, the second borrow-propagation pass
 	   could only have wrapped around to decrease in[0] again if the
@@ -422,11 +460,46 @@ const fcontract = {out : byte[:], in : int64[:]
 	   were all zero.  In that case, in[1] is now 2^25 - 1, and this
 	   last borrow-propagation step will leave in[1] non-negative.
 	*/
-	mask = (in[0] : int32) >> 31
-	carry = -(((in[0] : int32) & mask) >> 26)
-	in[0] = ((in[0] : int32) + (carry << 26) : int64)
-	in[1] = ((in[1] : int32) - carry : int64)
-	
+	mask = in[0] >> 31
+	carry = -((in[0] & mask) >> 26)
+	in[0] = in[0] + (carry << 26)
+	in[1] = in[1] - carry
+
+	for var j = 0; j < 2; j++
+		for var i = 0; i < 9; i++
+			if (i & 1) == 1
+				carry = in[1] >> 25
+				in[i+0] &= 0x1ffffff
+				in[i+1] += carry
+			else
+				carry = in[i] >> 26
+				in[i+0] &= 0x3ffffff
+				in[i+1] += carry
+			;;
+		;;
+		carry = in[9] >> 25
+		in[9] &= 0x1ffffff
+		in[0] += (19 * carry)
+	;;
+
+	mask = s32_gte(in[0], 0x3ffffed)
+	for var i = 1; i < 10; i++
+		if (i & 1) == 1
+			mask &= s32_eq(in[i], 0x1ffffff)
+		else
+			mask &= s32_eq(in[i], 0x3ffffff)
+		;;
+	;;
+	in[0] -= (mask & 0x3ffffed)
+
+	for var i = 1; i < 10; i++
+		if (i & 1) == 1
+			in[i] -= (mask & 0x1ffffff)
+		else
+			in[i] -= (mask & 0x3ffffff)
+		;;
+	;;
+
 	/* Both passes through the above loop, plus the last 0-to-1 step, are
 	   necessary: if in[9] is -1 and in[0] through in[8] are 0,
 	   negative values will remain in the array until the end.
@@ -482,7 +555,6 @@ const fmonty = {x2, z2, x3, z3, x, z, xprime, zprime, qmqp
 	std.clear(&zzprime);
 	std.clear(&zzzprime);
 	std.clear(&xxxprime);
-	std.clear(&origx);
 
 	std.slcp(origx[:10], x[:10])
 	fsum(x, z)
@@ -518,7 +590,6 @@ const fmonty = {x2, z2, x3, z3, x, z, xprime, zprime, qmqp
 	fscalarproduct(zzz[:], zz[:], 121665)
 	/* No need to call freduce_degree here:
 	   fscalar_product doesn't increase the degree of its input. */
-	freducedegree(zzz[:])
 	freducecoeff(zzz[:])
 	fsum(zzz[:], xx[:])
 	fproduct(z2, zz[:], zzz[:])
@@ -530,7 +601,7 @@ const cswap = {a, b, swap
 	var s, x
 
 	s = (-swap : int32)
-	for var i = 0; i < 10; i++
+	for var i = 0; i < 10; ++i
 		x = s & ((a[i] : int32) ^ (b[i] : int32))
 		a[i] = ((a[i] : int32) ^ x : int64)
 		b[i] = ((b[i] : int32) ^ x : int64)
@@ -576,8 +647,8 @@ const cmult = {resultx, resultz, n, q
 			    nqpqx, nqpqz,
 			    q)
 
-		        cswap(nqx2, nqpqx2, bit);
-			cswap(nqz2, nqpqz2, bit);
+		    cswap(nqx2, nqpqx2, bit)
+			cswap(nqz2, nqpqz2, bit)
 
 			t = nqx
 			nqx = nqx2
@@ -643,7 +714,7 @@ const crecip = {out, z
 	/* 2^21 - 2^1 */ fsquare(t0[:], z2_20_0[:])
 	/* 2^22 - 2^2 */ fsquare(t1[:], t0[:])
 	/* 2^40 - 2^20 */
-	for var i = 2;i < 20;i += 2
+	for i = 2;i < 20;i += 2
 		fsquare(t0[:], t1[:])
 		fsquare(t1[:], t0[:])
 	;;
@@ -652,7 +723,7 @@ const crecip = {out, z
 	/* 2^41 - 2^1 */ fsquare(t1[:],t0[:])
 	/* 2^42 - 2^2 */ fsquare(t0[:],t1[:])
 	/* 2^50 - 2^10 */
-	for var i = 2;i < 10;i += 2
+	for i = 2;i < 10;i += 2
 		fsquare(t1[:],t0[:])
 		fsquare(t0[:],t1[:])
 	;;
@@ -711,7 +782,6 @@ const curve25519 = {pub : byte[:/*32*/], secret : byte[:/*32*/], basepoint : byt
 	cmult(x[:], z[:], secret[:], bp[:])
 	crecip(zmone[:], z[:])
 	fmul(z[:], x[:], zmone[:])
-	freducecoeff(z[:])
 	fcontract(pub[:], z[:])
 }
 
