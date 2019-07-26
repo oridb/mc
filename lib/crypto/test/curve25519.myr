@@ -1,0 +1,37 @@
+// https://tools.ietf.org/html/rfc7748#page-13
+use std
+use crypto
+
+const main = {
+	var pub : byte[32]
+	var prv : byte[32]
+	var base : byte[32]
+	var t0, t31
+
+	std.slcp(prv[:], crypto.Nine)
+	std.slcp(base[:], crypto.Nine)
+	crypto.curve25519(pub[:], prv[:], base[:])
+	hasheq(pub, "422c8e7a6227d7bca1350b3e2bb7279f7897b87bb6854b783c60e80311ae3079")
+	for var i = 1; i < 1000; i++
+		std.slcp(prv[:], pub[:])
+		(t0, t31) = (prv[0], prv[31])
+		crypto.curve25519(pub[:], prv[:], base[:])
+		(prv[0], prv[31]) = (t0, t31)
+		std.slcp(base[:], prv[:])
+	;;
+	hasheq(pub, "684cf59ba83309552800ef566f2f4d3c1c3887c49360e3875f2eb94d99532c51")
+}
+
+const hasheq = {got, expected
+	var sb, str
+
+	sb = std.mksb()
+	for x : got
+		std.sbfmt(sb, "{p=0,w=2,x}", x)
+	;;
+	str = std.sbfin(sb)
+	if (!std.eq(str, expected))
+		std.fatal("mismatched hashes:\n\tgot:\t\t{}\n\texpected:\t{}\n", str, expected)
+	;;
+	std.slfree(str)
+}
