@@ -468,7 +468,7 @@ const within = {re, str
 
 const itrace = {re, thr, inst
 	match inst
-	| `Ibyte b:	std.put("\t{}.{}:\tByte ({})\n", thr.tid, thr.ip, thr.tid, thr.ip, b)
+	| `Ibyte b:	std.put("\t{}.{}:\tByte ({})\n", thr.tid, thr.ip, b)
 	| `Irange (lo, hi):	std.put("\t{}.{}:\tRange {}, {}\n", thr.tid, thr.ip, lo, hi)
 	| `Ilbra m:	std.put("\t{}.{}:\tLbra {}\n", thr.tid, thr.ip, m)
 	| `Irbra m:	std.put("\t{}.{}:\tRbra {}\n", thr.tid, thr.ip, m)

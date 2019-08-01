@@ -227,7 +227,7 @@ const rtdump = {rt, ind
 		rtdump(rt.link[i], ind + 1)
 	;;
 	indent(ind)
-	std.put("}\n")
+	std.put("}}\n")
 }
 
 const indent = {ind
