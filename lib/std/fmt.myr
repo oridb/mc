@@ -454,10 +454,14 @@ const fltparams = {params
 	fp = [
 		.mode = MNormal,
 		.prec = 0,
+		.padfill = ' ',
+		.padto = 0,
 	]
 
 	for p : params
 		match p
+		| ("w", wid):	fp.padto = getint(wid, "fmt: width must be integer")
+		| ("p", pad):	fp.padfill = decode(pad)
 		| (opt, arg):
 			std.write(2, "fmt: ")
 			std.write(2, opt)
@@ -466,6 +470,7 @@ const fltparams = {params
 			std.die("\nunreachable\n")
 		;;
 	;;
+	iassert(fp.padto >= 0, "pad must be >= 0")
 	-> fp
 }
 

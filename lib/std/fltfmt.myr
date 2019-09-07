@@ -3,6 +3,7 @@ use "bigint"
 use "die"
 use "extremum"
 use "fltbits"
+use "option"
 use "slpush"
 use "strbuf"
 use "types"
@@ -17,6 +18,8 @@ pkg std =
 	pkglocal type fltparams = struct
 		mode	: int
 		prec	: int
+		padto	: size
+		padfill	: char
 	;;
 
 	pkglocal const flt64bfmt	: (sb : strbuf#, opts : fltparams, val : flt64 -> void)
@@ -30,46 +33,93 @@ const flt64bfmt = {sb, opts, val
 	var isneg, exp, mant
 
 	if isnan(val)
-		sbputs(sb, "NaN")
-		-> void
+		-> nanfmt(sb, opts)
 	;;
 
 	(isneg, exp, mant) = flt64explode(val)
 
 	if exp > Dblbias
-		if isneg
-			std.sbputs(sb, "-Inf")
-		else
-			std.sbputs(sb, "Inf")
-		;;
-		-> void
+		-> inffmt(sb, opts, isneg)
 	;;
 
+	var valsb = mksb()
+
 	exp = max(exp, 1 - Dblbias)
-	dragon4(sb, isneg, mant, exp - 52, Dblbias, opts.mode, opts.prec)
+	dragon4(valsb, false, mant, exp - 52, Dblbias, opts.mode, opts.prec)
+
+	-> blobfmt(sb, sbfin(valsb), opts, isneg)
 }
 
 const flt32bfmt = {sb, opts, val
 	var isneg, exp, mant
 
 	if isnan(val)
-		sbputs(sb, "NaN")
-		-> void
+		-> nanfmt(sb, opts)
 	;;
 
 	(isneg, exp, mant) = flt32explode(val)
 
 	if (exp : int64) > Fltbias
-		if isneg
-			std.sbputs(sb, "-Inf")
-		else
-			std.sbputs(sb, "Inf")
-		;;
-		-> void
+		-> inffmt(sb, opts, isneg)
 	;;
 
+	var valsb = mksb()
+
 	exp = (max((exp : int64), 1 - Fltbias) : int32)
-	dragon4(sb, isneg, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.prec)
+	dragon4(valsb, false, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.prec)
+
+	-> blobfmt(sb, sbfin(valsb), opts, isneg)
+}
+
+const nanfmt = {sb, opts
+	var npad = clamp(opts.padto - 3, 0, opts.padto)
+
+	for var j = 0; j < npad; j++
+		sbputc(sb, opts.padfill)
+	;;
+
+	sbputs(sb, "NaN")
+}
+
+const inffmt = {sb, opts, isneg
+	var s = "Inf"
+	var l = 3
+
+	if isneg
+		s = "-Inf"
+		l = 4
+	;;
+
+	var npad = clamp(opts.padto - l, 0, opts.padto)
+
+	for var j = 0; j < npad; j++
+		sbputc(sb, opts.padfill)
+	;;
+
+	sbputs(sb, s)
+}
+
+const blobfmt = {sb, blob, opts, isneg
+	/* No exotic characters, so no need for strcellwidth */
+	var width = blob.len
+
+	if isneg
+		width++
+	;;
+
+	var npad = clamp(opts.padto - width, 0, opts.padto)
+
+	if opts.padfill == '0' && isneg
+		sbputb(sb, ('-' : byte))
+	;;
+	for var j = 0; j < npad; j++
+		sbputc(sb, opts.padfill)
+	;;
+	if opts.padfill != '0' && isneg
+		sbputb(sb, ('-' : byte))
+	;;
+
+	sbputs(sb, blob)
 }
 
 /*

@@ -8,21 +8,24 @@ const main = {
 		[.name = "put0", .fn = put0],
 		[.name = "putNaN", .fn = putNaN],
 		[.name = "putInf", .fn = putInf],
+		[.name = "putinteger", .fn = putinteger],
+		[.name = "putlowprec", .fn = putlowprec],
+		[.name = "padding", .fn = padding],
 	][:])
 }
 
 const put0 = {c
-        var f : flt32 = 0.0
-        var g : flt64 = 0.0
+	var f : flt32 = 0.0
+	var g : flt64 = 0.0
 	testr.check(c, std.eq(std.fmt("f is {}", f), "f is 0.0"), "0.0 should format to \"0.0\"")
 	testr.check(c, std.eq(std.fmt("g is {}", g), "g is 0.0"), "0.0 should format to \"0.0\"")
 }
 
 const putNaN = {c
-        var f : flt32 = std.flt32nan()
-        var g : flt64 = std.flt64nan()
-        var f2 : flt32 = std.flt32frombits(0x7fc00ab0)
-        var g2 : flt64 = std.flt64frombits(0x7ff800000000abc0)
+	var f : flt32 = std.flt32nan()
+	var g : flt64 = std.flt64nan()
+	var f2 : flt32 = std.flt32frombits(0x7fc00ab0)
+	var g2 : flt64 = std.flt64frombits(0x7ff800000000abc0)
 	testr.check(c, std.eq(std.fmt("f is {}", f), "f is NaN"), "NaN should format to \"NaN\"")
 	testr.check(c, std.eq(std.fmt("g is {}", g), "g is NaN"), "NaN should format to \"NaN\"")
 	testr.check(c, std.eq(std.fmt("f2 is {}", f2), "f2 is NaN"), "alt NaN should format to \"NaN\"")
@@ -30,9 +33,85 @@ const putNaN = {c
 }
 
 const putInf = {c
-        var f : flt32 = std.flt32inf()
-        var g : flt64 = std.flt64inf()
+	var f : flt32 = std.flt32inf()
+	var g : flt64 = std.flt64inf()
 	testr.check(c, std.eq(std.fmt("f is {}", f), "f is Inf"), "Inf should format to \"Inf\"")
 	testr.check(c, std.eq(std.fmt("g is {}", g), "g is Inf"), "Inf should format to \"Inf\"")
+	f *= -1.0
+	g *= -1.0
+	testr.check(c, std.eq(std.fmt("f is {}", f), "f is -Inf"), "-Inf should format to \"-Inf\"")
+	testr.check(c, std.eq(std.fmt("g is {}", g), "g is -Inf"), "-Inf should format to \"-Inf\"")
 }
 
+const putinteger = {c
+	var data : (int, byte[:])[:] = [
+		(1, "1.0"), (2, "2.0"), (184, "184.0"), (-37, "-37.0")
+	][:]
+
+	for (f, exp) : data
+		var f32 : flt32 = (f : flt32)
+		var f64 : flt64 = (f : flt64)
+		var act32 : byte[:] = std.fmt("{}", f32)
+		var act64 : byte[:] = std.fmt("{}", f64)
+
+		testr.check(c, std.eq(act32, exp), "{} should format [flt32] to \"{}\", was \"{}\"", f, exp, act32)
+		testr.check(c, std.eq(act64, exp), "{} should format [flt64] to \"{}\", was \"{}\"", f, exp, act64)
+	;;
+}
+
+const putlowprec = {c
+	var data : (flt64, byte[:])[:] = [
+		(1.5, "1.5"), (0.0025, "0.0025"), (4.25, "4.25"), (-229.25, "-229.25")
+	][:]
+
+	for (f, exp) : data
+		var f32 : flt32 = (f : flt32)
+		var f64 : flt64 = (f : flt64)
+		var act32 : byte[:] = std.fmt("{}", f32)
+		var act64 : byte[:] = std.fmt("{}", f64)
+
+		testr.check(c, std.eq(act32, exp), "{} should format [flt32] to \"{}\", was \"{}\"", f, exp, act32)
+		testr.check(c, std.eq(act64, exp), "{} should format [flt64] to \"{}\", was \"{}\"", f, exp, act64)
+	;;
+}
+
+const padding = {c
+	var exp, act
+	var f32 : flt32
+	var f64 : flt64
+
+	f32 = 1.0
+	exp = "XXXX1.0"
+	act = std.fmt("{w=7,p=X}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f64 = 1.0
+	exp = "XXXX1.0"
+	act = std.fmt("{w=7,p=X}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f32 = -2.5
+	exp = "YYYYYY-2.5"
+	act = std.fmt("{w=10,p=Y}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f64 = -100000.5
+	exp = "-100000.5"
+	act = std.fmt("{w=9,p=Y}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f32 = -13.25
+	exp = "-013.25"
+	act = std.fmt("{w=7,p=0}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f32 = -1.0 * std.flt32inf()
+	exp = "0000000-Inf"
+	act = std.fmt("{w=11,p=0}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f64 = std.flt64nan()
+	exp = "               NaN"
+	act = std.fmt("{w=18,p= }", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f64, exp, act)
+}
