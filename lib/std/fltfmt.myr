@@ -14,14 +14,19 @@ pkg std =
 	pkglocal const MAbsolute = 1
 	pkglocal const MRelative = 2
 
-	pkglocal const flt64bfmt	: (sb : strbuf#, val : flt64, mode : int, precision : int -> void)
-	pkglocal const flt32bfmt	: (sb : strbuf#, val : flt32, mode : int, precision : int -> void)
+	pkglocal type fltparams = struct
+		mode	: int
+		prec	: int
+	;;
+
+	pkglocal const flt64bfmt	: (sb : strbuf#, opts : fltparams, val : flt64 -> void)
+	pkglocal const flt32bfmt	: (sb : strbuf#, opts : fltparams, val : flt32 -> void)
 ;;
 
 const Dblbias = 1023
 const Fltbias = 127
 
-const flt64bfmt = {sb, val, mode, precision
+const flt64bfmt = {sb, opts, val
 	var isneg, exp, mant
 
 	if isnan(val)
@@ -41,10 +46,10 @@ const flt64bfmt = {sb, val, mode, precision
 	;;
 
 	exp = max(exp, 1 - Dblbias)
-	dragon4(sb, isneg, mant, exp - 52, Dblbias, mode, precision)
+	dragon4(sb, isneg, mant, exp - 52, Dblbias, opts.mode, opts.prec)
 }
 
-const flt32bfmt = {sb, val, mode, precision
+const flt32bfmt = {sb, opts, val
 	var isneg, exp, mant
 
 	if isnan(val)
@@ -64,7 +69,7 @@ const flt32bfmt = {sb, val, mode, precision
 	;;
 
 	exp = (max((exp : int64), 1 - Fltbias) : int32)
-	dragon4(sb, isneg, (mant : uint64), (exp - 23 : int64), Fltbias, mode, precision)
+	dragon4(sb, isneg, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.prec)
 }
 
 /*

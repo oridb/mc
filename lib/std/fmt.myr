@@ -315,10 +315,10 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 		intfmt(sb, intparams(params), false, (val : uint64), 64)
 	| `Tyflt32:
 		var val : flt32 = vanext(ap)
-		flt32bfmt(sb, val, MNormal, 0)
+		flt32bfmt(sb, fltparams(params), val)
 	| `Tyflt64:
 		var val : flt64 = vanext(ap)
-		flt64bfmt(sb, val, MNormal, 0)
+		flt64bfmt(sb, fltparams(params), val)
 	| `Tyvalist:
 		sbputs(sb, "...")
 
@@ -446,6 +446,27 @@ const fmtslice = {sb, subap, params
 	if !joined
 		sbputs(sb, "]")
 	;;
+}
+
+const fltparams = {params
+	var fp : fltparams
+
+	fp = [
+		.mode = MNormal,
+		.prec = 0,
+	]
+
+	for p : params
+		match p
+		| (opt, arg):
+			std.write(2, "fmt: ")
+			std.write(2, opt)
+			std.write(2, "arg: ")
+			std.write(2, arg)
+			std.die("\nunreachable\n")
+		;;
+	;;
+	-> fp
 }
 
 type intparams = struct
