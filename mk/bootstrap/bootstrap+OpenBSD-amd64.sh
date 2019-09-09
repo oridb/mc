@@ -89,6 +89,7 @@ set -x
 	$pwd/6/6m -O obj -I obj/lib/sys lib/std/slpush.myr
 	$pwd/6/6m -O obj -I obj/lib/sys lib/std/striter.myr
 	$pwd/6/6m -O obj -I obj/lib/sys lib/std/intparse.myr
+	$pwd/6/6m -O obj -I obj/lib/sys lib/std/intfmt.myr
 	$pwd/6/6m -O obj -I obj/lib/sys lib/std/strsplit.myr
 	$pwd/6/6m -O obj -I obj/lib/sys lib/std/strbuf.myr
 	$pwd/6/6m -O obj -I obj/lib/sys lib/std/sldup.myr

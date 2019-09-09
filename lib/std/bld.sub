@@ -38,6 +38,7 @@ lib std =
 	hasprefix.myr
 	hassuffix.myr
 	htab.myr
+	intfmt.myr
 	intparse.myr
 	introspect.myr
 	ipparse.myr

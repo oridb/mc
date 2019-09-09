@@ -1,0 +1,79 @@
+use "die"
+use "extremum"
+use "intparse"
+use "option"
+use "strbuf"
+use "striter"
+use "types"
+
+pkg std =
+	pkglocal type intparams = struct
+		base	: size
+		padto	: size
+		padfill	: char
+	;;
+
+	pkglocal const intfmt	: (sb : strbuf#, opts : intparams, signed : bool, bits : uint64, nbits : uint64 -> void)
+;;
+
+const digitchars = "0123456789abcdef"
+const intfmt = {sb : strbuf#, opts : intparams, signed : bool, bits : uint64, nbits : uint64
+	var isneg
+	var sval, val
+	var b : byte[64]
+	var i, j, npad
+	var base
+
+	base = (opts.base : uint64)
+	if signed && bits >= 1 << (nbits - 1)
+		sval = -(bits : int64)
+		val = (sval : uint64)
+		isneg = true
+
+		/* if its negative after inverting, we have int64 min */
+		if sval < 0
+			std.sbputs(sb, "-9223372036854775808")
+			-> void
+		;;
+	else
+		val = (bits : uint64)
+		val &= ~0 >> nbits
+		isneg = false
+	;;
+
+	i = 0
+	if val == 0
+		b[0] = ('0' : byte)
+		i++
+	;;
+	while val != 0
+		b[i] = digitchars[val % base]
+		val /= base
+		i++
+	;;
+
+	npad = clamp(opts.padto - i, 0, opts.padto)
+	if isneg
+		npad--
+	;;
+	if opts.padfill == '0' && isneg
+		sbputb(sb, ('-' : byte))
+	;;
+	for j = 0; j < npad; j++
+		sbputc(sb, opts.padfill)
+	;;
+	if opts.padfill != '0' && isneg
+		sbputb(sb, ('-' : byte))
+	;;
+	for j = i; j != 0; j--
+		sbputb(sb, b[j - 1])
+	;;
+}
+
+/* would use std.get(), but that's a dependency loop */
+const getint = {s, msg
+	match std.intparse(s)
+	| `Some w:	-> w;
+	| `None:	die(msg)
+	;;
+}

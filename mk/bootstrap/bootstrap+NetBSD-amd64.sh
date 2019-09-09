@@ -69,6 +69,7 @@ set -x
 	$pwd/6/6m -I lib/sys lib/std/slpush.myr
 	$pwd/6/6m -I lib/sys lib/std/strsplit.myr
 	$pwd/6/6m -I lib/sys lib/std/strbuf.myr
+	$pwd/6/6m -I lib/sys lib/std/intfmt.myr
 	$pwd/6/6m -I lib/sys lib/std/sldup.myr
 	$pwd/6/6m -I lib/sys lib/std/bigint.myr
 	$pwd/6/6m -I lib/sys lib/std/fltparse.myr
