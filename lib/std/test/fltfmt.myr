@@ -11,6 +11,7 @@ const main = {
 		[.name = "putinteger", .fn = putinteger],
 		[.name = "putlowprec", .fn = putlowprec],
 		[.name = "padding", .fn = padding],
+		[.name = "sigfigs", .fn = sigfigs],
 	][:])
 }
 
@@ -88,7 +89,7 @@ const padding = {c
 	f64 = 1.0
 	exp = "XXXX1.0"
 	act = std.fmt("{w=7,p=X}", f64)
-	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f64, exp, act)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
 
 	f32 = -2.5
 	exp = "YYYYYY-2.5"
@@ -98,7 +99,7 @@ const padding = {c
 	f64 = -100000.5
 	exp = "-100000.5"
 	act = std.fmt("{w=9,p=Y}", f64)
-	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f64, exp, act)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
 
 	f32 = -13.25
 	exp = "-013.25"
@@ -113,5 +114,56 @@ const padding = {c
 	f64 = std.flt64nan()
 	exp = "               NaN"
 	act = std.fmt("{w=18,p= }", f64)
-	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f64, exp, act)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+}
+
+const sigfigs = {c
+	var exp, act
+	var f32 : flt32
+	var f64 : flt64
+
+	f32 = 9.1234
+	exp = "9.12"
+	act = std.fmt("{s=3}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f64 = 19.1234
+	exp = "19.123"
+	act = std.fmt("{s=5}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f64 = 104.9
+	exp = "100.0"
+	act = std.fmt("{s=2}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f64 = 105.1
+	exp = "110.0"
+	act = std.fmt("{s=2}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f64 = 12345.6789
+	exp = "12345.6789"
+	act = std.fmt("{s=200}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f64 = 12345.6789
+	exp = "12345.679"
+	act = std.fmt("{s=8}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f32 = -13.49
+	exp = "-13.5"
+	act = std.fmt("{s=3}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f32 = -13.53
+	exp = "-13.5"
+	act = std.fmt("{s=3}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f32 = -13.53
+	exp = "-10.0"
+	act = std.fmt("{s=-23}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
 }

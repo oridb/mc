@@ -453,7 +453,7 @@ const fltparams = {params
 
 	fp = [
 		.mode = MNormal,
-		.prec = 0,
+		.cutoff = 0,
 		.padfill = ' ',
 		.padto = 0,
 	]
@@ -462,6 +462,9 @@ const fltparams = {params
 		match p
 		| ("w", wid):	fp.padto = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	fp.padfill = decode(pad)
+		| ("s", sig):
+			fp.mode = MRelative
+			fp.cutoff = getint(sig, "fmt: significant figures must be integer")
 		| (opt, arg):
 			std.write(2, "fmt: ")
 			std.write(2, opt)

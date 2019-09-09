@@ -17,7 +17,7 @@ pkg std =
 
 	pkglocal type fltparams = struct
 		mode	: int
-		prec	: int
+		cutoff	: size
 		padto	: size
 		padfill	: char
 	;;
@@ -45,7 +45,7 @@ const flt64bfmt = {sb, opts, val
 	var valsb = mksb()
 
 	exp = max(exp, 1 - Dblbias)
-	dragon4(valsb, false, mant, exp - 52, Dblbias, opts.mode, opts.prec)
+	dragon4(valsb, false, mant, exp - 52, Dblbias, opts.mode, opts.cutoff)
 
 	-> blobfmt(sb, sbfin(valsb), opts, isneg)
 }
@@ -66,7 +66,7 @@ const flt32bfmt = {sb, opts, val
 	var valsb = mksb()
 
 	exp = (max((exp : int64), 1 - Fltbias) : int32)
-	dragon4(valsb, false, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.prec)
+	dragon4(valsb, false, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.cutoff)
 
 	-> blobfmt(sb, sbfin(valsb), opts, isneg)
 }
@@ -209,16 +209,19 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		else
 			if mode == MRelative
 				cutoff += k - 1
+				a = cutoff - k + 1
+			else
+				a = cutoff
 			;;
+
 			/* common between relative and absolute */
-			a = cutoff - k - 1
 			y = bigdup(s)
 			if a < 0
-				for i = 0; i < a; i++
+				for i = 0; i < -a; i++
 					bigmuli(y, 10)
 				;;
 			else
-				for i = 0; i < -a; i++
+				for i = 0; i < a; i++
 					bigaddi(y, 9)
 					bigdivi(y, 10)
 				;;
@@ -227,15 +230,16 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 			| `Before:	/* nothing */
 			| _:
 				bigfree(mm)
-				mm = y
+				mm = bigdup(y)
 			;;
 			match bigcmp(y, mp)
 			| `Before:	/* nothing */
 			| _:
 				bigfree(mp)
-				mp = y
+				mp = bigdup(y)
 				roundup = true
 			;;
+			bigfree(y)
 		;;
 		u = bigdup(s)
 		bigshli(u, 1)
