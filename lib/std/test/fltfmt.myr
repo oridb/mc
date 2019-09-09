@@ -12,6 +12,8 @@ const main = {
 		[.name = "putlowprec", .fn = putlowprec],
 		[.name = "padding", .fn = padding],
 		[.name = "sigfigs", .fn = sigfigs],
+		[.name = "scientific01", .fn = scientific01],
+		[.name = "scientific02", .fn = scientific02],
 	][:])
 }
 
@@ -166,4 +168,62 @@ const sigfigs = {c
 	exp = "-10.0"
 	act = std.fmt("{s=-23}", f32)
 	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+}
+
+const scientific01 = {c
+	var exp, act
+	var f32 : flt32
+	var f64 : flt64
+
+	f32 = 9.125
+	exp = "9.125e0"
+	act = std.fmt("{e}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f32 = -9.125
+	exp = "-9.125e0"
+	act = std.fmt("{e}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f32 = 101.25
+	exp = "1.0125e2"
+	act = std.fmt("{e}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f64 = 0.000345
+	exp = "3.45e-4"
+	act = std.fmt("{e}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+
+	f64 = 0.0
+	exp = "0.0"
+	act = std.fmt("{e}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+}
+
+const scientific02 = {c
+	var exp, act
+	var f32 : flt32
+	var f64 : flt64
+
+	f32 = 9.125
+	exp = "9.1e0"
+	act = std.fmt("{s=2,e}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f32 = 9.125
+	exp = "9.1e0"
+	act = std.fmt("{e,s=2}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f32 = 9.125
+	exp = "9.0e0"
+	act = std.fmt("{e,s=1}", f32)
+	testr.check(c, std.eq(exp, act), "{} should format [flt32] to \"{}\", was \"{}\"", f32, exp, act)
+
+	f64 = -0.000345
+	exp = "-3.4e-4"
+	act = std.fmt("{e,s=2}", f64)
+	testr.check(c, std.eq(exp, act), "{} should format [flt64] to \"{}\", was \"{}\"", f64, exp, act)
+
 }

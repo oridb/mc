@@ -3,6 +3,7 @@ use "bigint"
 use "die"
 use "extremum"
 use "fltbits"
+use "intfmt"
 use "option"
 use "slpush"
 use "strbuf"
@@ -16,10 +17,11 @@ pkg std =
 	pkglocal const MRelative = 2
 
 	pkglocal type fltparams = struct
-		mode	: int
-		cutoff	: size
-		padto	: size
-		padfill	: char
+		mode		: int
+		cutoff		: size
+		scientific	: bool
+		padto		: size
+		padfill		: char
 	;;
 
 	pkglocal const flt64bfmt	: (sb : strbuf#, opts : fltparams, val : flt64 -> void)
@@ -45,7 +47,7 @@ const flt64bfmt = {sb, opts, val
 	var valsb = mksb()
 
 	exp = max(exp, 1 - Dblbias)
-	dragon4(valsb, false, mant, exp - 52, Dblbias, opts.mode, opts.cutoff)
+	dragon4(valsb, false, mant, exp - 52, Dblbias, opts.mode, opts.cutoff, opts.scientific)
 
 	-> blobfmt(sb, sbfin(valsb), opts, isneg)
 }
@@ -66,7 +68,7 @@ const flt32bfmt = {sb, opts, val
 	var valsb = mksb()
 
 	exp = (max((exp : int64), 1 - Fltbias) : int32)
-	dragon4(valsb, false, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.cutoff)
+	dragon4(valsb, false, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.cutoff, opts.scientific)
 
 	-> blobfmt(sb, sbfin(valsb), opts, isneg)
 }
@@ -130,13 +132,14 @@ f: mantissa
 
 floating value: x = f^(e - p)
 */
-const dragon4 = {sb, isneg, f, e, p, mode, cutoff
+const dragon4 = {sb, isneg, f, e, p, mode, cutoff, scientific
 	var r, s, t, u, v, y
 	var udig
 	var mm, mp	/* margins above and below */
 	var roundup
 	var low, high
 	var k
+	var tenpower : int64 = 0
 	var a, i
 
 	if isneg
@@ -252,6 +255,11 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		;;
 	;;
 
+	if scientific
+		tenpower = (k - 1 : int64)
+		k = 1
+	;;
+
 	if k <= 0
 		sbputs(sb, "0.")
 		for var i = 0; i < -k; i++
@@ -320,12 +328,16 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff
 		format(sb, 0, k--)
 	;;
 
+	if scientific
+		sbputs(sb, "e")
+		intfmt(sb, [ .base = 10 ], true, (tenpower : uint64), 64)
+	;;
+
 	bigfree(u)
 	bigfree(r)
 	bigfree(s)
 	bigfree(mm)
 	bigfree(mp)
-
 }
 
 const lowdig = {u

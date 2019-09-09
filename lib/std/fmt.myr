@@ -210,6 +210,7 @@ const sbfmtv = {sb, fmt, ap -> size
 			if startp != nbuf
 				param[nparam++] = (buf[startp:nbuf], "")
 			;;
+			startp = nbuf
 		| (`ParamOpt, '}'):
 			state = `Copy
 			if startp != nbuf
@@ -455,12 +456,14 @@ const fltparams = {params
 	fp = [
 		.mode = MNormal,
 		.cutoff = 0,
+		.scientific = false,
 		.padfill = ' ',
 		.padto = 0,
 	]
 
 	for p : params
 		match p
+		| ("e", ""):	fp.scientific = true
 		| ("w", wid):	fp.padto = getint(wid, "fmt: width must be integer")
 		| ("p", pad):	fp.padfill = decode(pad)
 		| ("s", sig):
