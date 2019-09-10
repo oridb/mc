@@ -47,7 +47,7 @@ const flt64bfmt = {sb, opts, val
 	var valsb = mksb()
 
 	exp = max(exp, 1 - Dblbias)
-	dragon4(valsb, false, mant, exp - 52, Dblbias, opts.mode, opts.cutoff, opts.scientific)
+	dragon4(valsb, false, mant, exp - 52, Dblbias, opts.mode, -opts.cutoff, opts.scientific)
 
 	-> blobfmt(sb, sbfin(valsb), opts, isneg)
 }
@@ -68,7 +68,7 @@ const flt32bfmt = {sb, opts, val
 	var valsb = mksb()
 
 	exp = (max((exp : int64), 1 - Fltbias) : int32)
-	dragon4(valsb, false, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, opts.cutoff, opts.scientific)
+	dragon4(valsb, false, (mant : uint64), (exp - 23 : int64), Fltbias, opts.mode, -opts.cutoff, opts.scientific)
 
 	-> blobfmt(sb, sbfin(valsb), opts, isneg)
 }
@@ -148,6 +148,9 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff, scientific
 	/* if we have zero for the mantissa, we can return early */
 	if f == 0
 		sbputs(sb, "0.0")
+		if scientific
+			sbputs(sb, "e0")
+		;;
 		-> void
 	;;
 
@@ -207,24 +210,26 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff, scientific
 				bigfree(u)
 			;;
 		;;
+
 		if mode == MNormal
 			cutoff = k
 		else
 			if mode == MRelative
-				cutoff += k - 1
-				a = cutoff - k + 1
-			else
-				a = cutoff
+				if cutoff >= 0
+					cutoff = -1
+				;;
+				cutoff += k
 			;;
+			a = cutoff - k
 
 			/* common between relative and absolute */
 			y = bigdup(s)
-			if a < 0
-				for i = 0; i < -a; i++
+			if a > 0
+				for i = 0; i < a; i++
 					bigmuli(y, 10)
 				;;
 			else
-				for i = 0; i < a; i++
+				for i = 0; i < -a; i++
 					bigaddi(y, 9)
 					bigdivi(y, 10)
 				;;
@@ -241,9 +246,16 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff, scientific
 				bigfree(mp)
 				mp = bigdup(y)
 				roundup = true
+
+				/* recalculate 2*R + M+ for the loop termination */
+				bigfree(t)
+				t = bigdup(r)
+				bigshli(t, 1)
+				bigadd(t, mp)
 			;;
 			bigfree(y)
 		;;
+
 		u = bigdup(s)
 		bigshli(u, 1)
 		match bigcmp(t, u)
@@ -257,6 +269,7 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff, scientific
 
 	if scientific
 		tenpower = (k - 1 : int64)
+		cutoff += (1 - k)
 		k = 1
 	;;
 
@@ -324,7 +337,10 @@ const dragon4 = {sb, isneg, f, e, p, mode, cutoff, scientific
 		;;
 	;;
 	k--
-	while k >= -1
+	if !scientific && cutoff > -1
+		cutoff = -1
+	;;
+	while k >= cutoff
 		format(sb, 0, k--)
 	;;
 
