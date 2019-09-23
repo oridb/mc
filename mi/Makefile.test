@@ -1,0 +1,7 @@
+BIN=match_test
+OBJ=match.o match_test.o
+
+
+DEPS=../parse/libparse.a ../util/libutil.a
+
+include ../mk/c.mk
