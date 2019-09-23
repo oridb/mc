@@ -1,0 +1,105 @@
+use std
+use bio
+use math
+
+const atoi = {s
+	match std.intparse(s)
+	| `std.Some v: -> v
+	| `std.None: std.fatal("error")
+	;;
+}
+
+const avg = {xs
+	var sum
+
+	sum = 0
+	for x : xs
+		sum += x
+	;;
+	-> (sum : flt64) / (xs.len : flt64)
+}
+
+const intcmp = {a, b
+	if a < b
+		-> `std.After
+	elif a > b
+		-> `std.Before
+	else
+		-> `std.Equal
+	;;
+}
+
+const percentile = {percent, xs
+	var sorted
+	var idx, i
+	var ret
+
+	sorted = std.sort(xs, intcmp)
+	idx = ((percent : flt64) / 100.0) * (sorted.len : flt64)
+	i = (math.floor(idx) : int)
+	if idx == math.floor(idx)
+		ret = (xs[i-1] : flt64)
+	elif idx > 1.0
+		ret = ((xs[i-1] + xs[i]) / 2 : flt64)
+	else
+		std.fatal("percentile out-of-bunds\n")
+	;;
+	-> ret
+}
+
+const maximum = {xs
+	var m
+
+	m = xs[0]
+	for v : xs
+		if v > m
+			m = v
+		;;
+	;;
+	-> m
+}
+
+const main = {args : byte[:][:]
+	var f, locs, sizes, heights, count
+
+	if args.len < 2
+		std.put("need input file\n")
+		std.exit(1)
+	;;
+
+	match bio.open(args[1], bio.Rd)
+	| `std.Ok fd:  f = fd
+	| `std.Err e:  std.fatal("error opening {}: {}\n", args[0], e)
+	;;
+
+	locs = [][:]
+	sizes = [][:]
+	heights = [][:]
+	count = 0
+
+	while true
+		match bio.readto(f, ",")
+		| `std.Ok loc: std.slpush(&locs, std.strstrip(loc))
+		| `std.Err `bio.Eof: break
+		| `std.Err e: std.fatal("error read loc: {}\n", e)
+		;;
+
+		match bio.readto(f, ",")
+		| `std.Ok size: std.slpush(&sizes, atoi(std.strstrip(size)))
+		| `std.Err e: std.fatal("error read size: {}\n", e)
+		;;
+
+		match bio.readto(f, "\n")
+		| `std.Ok height: std.slpush(&heights, atoi(std.strstrip(height)))
+		| `std.Err e: std.fatal("error read height: {}\n", e)
+		;;
+		count ++
+	;;
+
+	std.put("Sample count: {}\n", count)
+	std.put("Dtree Size\tavg: {s=3}\t95th percentile: {s=3}\t maximum: {}\n", avg(sizes), percentile(95, sizes), maximum(sizes))
+	std.put("Dtree Height\tavg: {s=3}\t95th percentile: {s=3}\t maximum: {}\n", avg(heights), percentile(95, heights), maximum(heights))
+
+	bio.close(f)
+}
+
