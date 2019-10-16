@@ -27,7 +27,6 @@ char debugopt[128];
 
 typedef struct Dtree Dtree;
 extern Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid);
-extern Dtree *gendtree2(Node *m, Node *val, Node **lbl, size_t nlbl, int startid);
 extern void dtreedump(FILE *fd, Dtree *dt);
 
 
@@ -266,7 +265,7 @@ test_match(int idx, Node *val, Node **pat, Dtree *want)
 			lappend(&lbl, &nlbl, genlbl(pat[i]->match.block->loc));
 		}
 
-		dt = gendtree2(m, v, lbl, nlbl, 0);
+		dt = gendtree(m, v, lbl, nlbl, 0);
 		if (getenv("d")) {
 			fprintf(stderr, "dtree >>\n");
 			dtreedump(stderr, dt);

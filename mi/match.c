@@ -14,7 +14,7 @@
 #include "parse.h"
 #include "mi.h"
 
-Dtree *gendtree2(Node *m, Node *val, Node **lbl, size_t nlbl, int startid);
+Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid);
 void dtreedump(FILE *fd, Dtree *dt);
 
 
@@ -587,7 +587,7 @@ pi_found:
 
 
 Dtree *
-gendtree2(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
+gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 {
 	Dtree *root;
 	Node **pat;
@@ -698,7 +698,7 @@ genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 
 
 	endlbl = genlbl(m->loc);
-		dt = gendtree2(m, val, lbl, nlbl, ndtree);
+		dt = gendtree(m, val, lbl, nlbl, ndtree);
 	genmatchcode(dt, out, nout);
 
 	for (i = 0; i < npat; i++) {
