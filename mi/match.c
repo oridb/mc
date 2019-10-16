@@ -26,6 +26,39 @@ void dtreedump(FILE *fd, Dtree *dt);
 
 static int ndtree;
 
+typedef struct Path {
+	unsigned char len;
+	unsigned char *p;
+} Path;
+
+typedef struct Slot {
+	Path *path;
+	Node *pat;
+	Node *load;
+} Slot;
+
+static Slot *
+newslot(Path *path, Node *pat, Node *val)
+{
+	Slot *s;
+	s = zalloc(sizeof(Slot));
+	s->path = path;
+	s->pat = pat;
+	s->load = val;
+	assert(path != (void *)1);
+	return s;
+}
+
+// The instances of the struct are immutable.
+typedef struct Frontier {
+	int i;
+	Node *lbl;
+	Slot  **slot;
+	size_t nslot;
+	Node **cap;
+	size_t ncap;
+} Frontier;
+
 static Node *
 utag(Node *n)
 {
@@ -752,26 +785,6 @@ genmatchcode(Dtree *dt, Node ***out, size_t *nout)
 }
 
 void
-genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap)
-{
-	Dtree *start, *accept, *reject, **end;
-	size_t nend;
-
-	end = NULL;
-	nend = 0;
-
-	start = mkdtree(pat->loc, genlbl(pat->loc));
-	accept = mkdtree(iftrue->loc, iftrue);
-	accept->accept = 1;
-	reject = mkdtree(iffalse->loc, iffalse);
-	reject->accept = 1;
-
-	assert(addpat(pat, val, start, accept, cap, ncap, &end, &nend));
-	acceptall(start, reject);
-	genmatchcode(start, out, nout);
-}
-
-void
 genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 {
 	Node **pat, **lbl, *end, *endlbl;
@@ -854,39 +867,6 @@ dtreedump(FILE *fd, Dtree *dt)
 	dtreedumpnode(fd, dt, 0);
 }
 
-
-typedef struct Path {
-	unsigned char len;
-	unsigned char *p;
-} Path;
-
-typedef struct Slot {
-	Path *path;
-	Node *pat;
-	Node *load;
-} Slot;
-
-static Slot *
-newslot(Path *path, Node *pat, Node *val)
-{
-	Slot *s;
-	s = zalloc(sizeof(Slot));
-	s->path = path;
-	s->pat = pat;
-	s->load = val;
-	assert(path != (void *)1);
-	return s;
-}
-
-// The instances of the struct are immutable.
-typedef struct Frontier {
-	int i;
-	Node *lbl;
-	Slot  **slot;
-	size_t nslot;
-	Node **cap;
-	size_t ncap;
-} Frontier;
 
 static Path*
 newpath(Path *p, char c)
@@ -1305,4 +1285,19 @@ gendtree2(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	return root;
 }
 
+void
+genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap)
+{
+	Frontier **frontier;
+	size_t nfrontier;
+	Dtree *root;
+
+	frontier = NULL;
+	nfrontier = 0;
+	genfrontier(0, val, pat, iftrue, &frontier, &nfrontier);
+	lcat(cap, ncap, frontier[0]->cap, frontier[0]->ncap);
+	genfrontier(1, val, mkexpr(iffalse->loc, Ogap, NULL), iffalse, &frontier, &nfrontier);
+	root = compile(frontier, nfrontier);
+	genmatchcode(root, out, nout);
+}
 
