@@ -39,9 +39,9 @@ errorf(char *fmt, ...)
 	size_t n;
 
 	p = malloc(2048);
-	if (p == NULL) {
+	if (p == NULL)
 		return "(NULL)";
-	}
+
 	va_start(ap, fmt);
 	n = vsnprintf(p, 2048, fmt, ap);
 	va_end(ap);
@@ -114,26 +114,22 @@ exprequal(Node *a, Node *b, int depth)
 	size_t i;
 	char *err;
 
-	if (a == NULL && b == NULL) {
+	if (a == NULL && b == NULL)
 		return NULL;
-	}
-	if (a == NULL || b == NULL) {
+
+	if (a == NULL || b == NULL)
 		return "either one is null";
-	}
 
-	if (false && a->nid != b->nid) {
+	if (false && a->nid != b->nid)
 		return errorf("nid is not matched. (%d) want %d, got %d", depth, a->nid, b->nid);
-	}
 
-	if (a->type != b->type) {
+	if (a->type != b->type)
 		return errorf("ntype is not matched. (%d) want %s, got %s", depth, nodestr[a->type], nodestr[b->type]);
-	}
 
 	switch (a->type) {
 	case Nexpr:
-		if (exprop(a) != exprop(b)) {
+		if (exprop(a) != exprop(b))
 			return errorf("op is not matched. (%d) want %s, got %s", depth, opstr[exprop(a)], opstr[exprop(b)]);
-		}
 
 		if (a->expr.nargs != b->expr.nargs) {
 			fprintf(stderr, "op:%s\n", opstr[exprop(a)]);
@@ -142,17 +138,15 @@ exprequal(Node *a, Node *b, int depth)
 
 		for (i = 0; i < a->expr.nargs; i++) {
 			err = exprequal(a->expr.args[i], b->expr.args[i], depth+1);
-			if (err != NULL) {
+			if (err != NULL)
 				return err;
-			}
 		}
 		break;
 	case Nlit:
 		switch (a->lit.littype) {
 		case Lint:
-			if (a->lit.intval != b->lit.intval) {
+			if (a->lit.intval != b->lit.intval)
 				return errorf("lit.intval is not matched. (%d) want %d, got %d", depth, a->lit.intval, b->lit.intval);
-			}
 			break;
 		default:
 		return errorf("unexpected littype: %s", nodestr[a->type]);
@@ -173,28 +167,25 @@ dtequal(Dtree *a, Dtree *b, int depth)
 	size_t i;
 	char *err;
 
-	if (a == NULL && b == NULL) {
+	if (a == NULL && b == NULL)
 		return NULL;
-	}
-	if (a == NULL || b == NULL) {
+	if (a == NULL || b == NULL)
 		return "either one is null";
-	}
 
-	if (a->id != b->id) {
+	if (a->id != b->id)
 		return errorf("id is not matched. (depth:%d) want %d, got %d", depth, a->id, b->id);
-	}
-	if (a->nconstructors != b->nconstructors) {
+
+	if (a->nconstructors != b->nconstructors)
 		return errorf("nconstructors is not matched. (depth:%d id:%d) want %ld, got %ld", depth, a->id, a->nconstructors, b->nconstructors);
-	}
-	if (a->accept != b->accept) {
+
+	if (a->accept != b->accept)
 		return errorf("accept is not matched. (depth:%d id:%d) want %ld, got %ld", depth, a->id, a->accept, b->accept);
-	}
-	if (a->emitted != b->emitted) {
+
+	if (a->emitted != b->emitted)
 		return errorf("emitted is not matched. (depth:%d id:%d) want %ld, got %ld", depth, a->id, a->emitted, b->emitted);
-	}
-	if (a->ptrwalk != b->ptrwalk) {
+
+	if (a->ptrwalk != b->ptrwalk)
 		return errorf("ptrwalk is not matched. (depth:%d id:%d) want %ld, got %ld", depth, a->id, a->ptrwalk, b->ptrwalk);
-	}
 
 	err = exprequal(a->load, b->load, 0);
 	if (err != NULL) {
@@ -205,15 +196,14 @@ dtequal(Dtree *a, Dtree *b, int depth)
 		return errorf("load is not matched. (depth:%d id:%d) want %p, got %p, %s", depth, a->id, a->load, b->load, err);
 	}
 
-	if (a->nnext != b->nnext) {
+	if (a->nnext != b->nnext)
 		return errorf("nnext is not matched. (depth:%d id:%d) want %d, got %d", depth, a->id, a->nnext, b->nnext);
-	}
-	if (a->npat != b->npat) {
+
+	if (a->npat != b->npat)
 		return errorf("npat is not matched. (depth:%d id:%d) want %d, got %d", depth, a->id, a->npat, b->npat);
-	}
-	if (a->ncap != b->ncap) {
+
+	if (a->ncap != b->ncap)
 		return errorf("ncap is not matched. (depth:%d id:%d) want %d, got %d", depth, a->id, a->ncap, b->ncap);
-	}
 
 	for (i = 0; i < a->npat; i++) {
 		err = exprequal(a->pat[i], b->pat[i], 0);
@@ -227,20 +217,17 @@ dtequal(Dtree *a, Dtree *b, int depth)
 	}
 	for (i = 0; i < a->nnext; i++) {
 		err = dtequal(a->next[i], b->next[i], depth+1);
-		if (err != NULL) {
+		if (err != NULL)
 			return errorf("next[%d] is not matched. (depth:%d id:%d) want %p, got %p, %s", i, depth, a->id, a->next[i], b->next[i], err);
-		}
 	}
 	err = dtequal(a->any, b->any, depth+1);
-	if (err != NULL) {
+	if (err != NULL)
 		return errorf("any is not matched. (depth:%d id:%d) want %p, got %p, %s", depth, a->id, a->any, b->any, err);
-	}
 
 	for (i = 0; i < a->ncap; i++) {
 		err = exprequal(a->cap[i], b->cap[i], 0);
-		if (err != NULL) {
+		if (err != NULL)
 			return err;
-		}
 	}
 
 	return NULL;
@@ -286,9 +273,8 @@ test_match(int idx, Node *val, Node **pat, Dtree *want)
 		}
 
 		err = dtequal(want, dt, 0);
-		if (err) {
+		if (err)
 			return err;
-		}
 	}
 
 	if (getenv("G")) {
@@ -1101,9 +1087,9 @@ main(int argc, char **argv)
 		Test *t = &tests[i];
 		char *name = t->name;
 		char *filter = getenv("N");
-		if (filter && !strstr(name, filter)) {
+		if (filter && !strstr(name, filter))
 			continue;
-		}
+
 		initfile(&file, errorf("(test-%d-%s)", i, name));
 		fprintf(stderr, "[%03lu]------ %s ##\n", i, name);
 		err = test_match(i, t->val, t->pats, t->dt);

@@ -222,13 +222,12 @@ patheq(Path *a, Path *b)
 {
 	unsigned char i;
 
-	if (a->len != b->len) {
+	if (a->len != b->len)
 		return 0;
-	}
+
 	for (i = 0; i < a->len; i++) {
-		if (a->p[i] != b->p[i]) {
+		if (a->p[i] != b->p[i])
 			return 0;
-		}
 	}
 	return 1;
 }
@@ -236,9 +235,9 @@ patheq(Path *a, Path *b)
 static int
 pateq(Node *a, Node *b)
 {
-	if (exprop(a) != exprop(b)) {
+	if (exprop(a) != exprop(b))
 		return 0;
-	}
+
 	switch (exprop(a)) {
 	case Olit:
 		return liteq(a->expr.args[0], b->expr.args[0]);
@@ -294,12 +293,10 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 		dcl = decls[pat->expr.did];
 		if (dcl->decl.isconst) {
 			ty = decltype(dcl);
-			if (ty->type == Tyfunc || ty->type == Tycode || ty->type == Tyvalist) {
+			if (ty->type == Tyfunc || ty->type == Tycode || ty->type == Tyvalist)
 				fatal(dcl, "bad pattern %s:%s: unmatchable type", declname(dcl), tystr(ty));
-			}
-			if (!dcl->decl.init) {
+			if (!dcl->decl.init)
 				fatal(dcl, "bad pattern %s:%s: missing initializer", declname(dcl), tystr(ty));
-			}
 			addrec(fs, dcl->decl.init, val, newpath(path, 0));
 		} else {
 			asn = mkexpr(pat->loc, Oasn, pat, val, NULL);
@@ -343,9 +340,8 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 		tagid = mkintlit(pat->loc, uc->id);
 		tagid->expr.type = mktype(pat->loc, Tyint32);
 		addrec(fs, tagid, utag(val), newpath(path, 0));
-		if (uc->etype) {
+		if (uc->etype)
 			addrec(fs, pat->expr.args[1], uvalue(val, uc->etype), newpath(path, 1));
-		}
 		break;
 	case Otup:
 		for (i = 0; i < pat->expr.nargs; i++) {
@@ -428,9 +424,8 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	 * if the sub-term at pi is not in the frontier,
 	 * then we do not reduce the frontier.
 	 */
-	if (c == NULL) {
+	if (c == NULL)
 		return _fs;
-	}
 
 	switch (exprop(c->pat)) {
 	case Ovar:
@@ -448,9 +443,8 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	 * if constructor at the path pi is not the constructor we want to project,
 	 * then return null.
 	 */
-	if (!pateq(pat, c->pat)) {
+	if (!pateq(pat, c->pat))
 		return NULL;
-	}
 
 	return _fs;
 }
@@ -525,13 +519,11 @@ pi_found:
 					 */
 					/* look for a duplicate entry to skip it; we want a unique set of constructors. */
 					for (k = 0; k < ncs; k++) {
-						if (pateq(cs[k], s->pat)) {
+						if (pateq(cs[k], s->pat))
 							break;
-						}
 					}
-					if (ncs == 0 || k == ncs) {
+					if (ncs == 0 || k == ncs)
 						lappend(&cs, &ncs, s->pat);
-					}
 				}
 				break;
 			default:
@@ -550,9 +542,8 @@ pi_found:
 		for (j = 0; j < nfrontier; j++) {
 			fs = frontier[j];
 			_fs = project(cs[i], slot->path, slot->load, fs);
-			if (_fs != NULL) {
+			if (_fs != NULL)
 				lappend(&_frontier, &_nfrontier, _fs);
-			}
 		}
 
 		if (_nfrontier > 0) {
@@ -570,20 +561,17 @@ pi_found:
 		k = -1;
 		for (j = 0; j < fs->nslot; j++) {
 			/* locate the occurrence of pi in fs */
-			if (patheq(slot->path, fs->slot[j]->path)) {
+			if (patheq(slot->path, fs->slot[j]->path))
 				k = j;
-			}
 		}
 
-		if (k == -1 || exprop(fs->slot[k]->pat) == Ovar || exprop(fs->slot[k]->pat) == Ogap) {
+		if (k == -1 || exprop(fs->slot[k]->pat) == Ovar || exprop(fs->slot[k]->pat) == Ogap)
 			lappend(&defaults, &ndefaults, fs);
-		}
 	}
-	if (ndefaults) {
+	if (ndefaults)
 		any = compile(defaults, ndefaults);
-	} else {
+	else
 		any = NULL;
-	}
 
 	/* construct the result dtree */
 	_dt = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
@@ -624,9 +612,8 @@ gendtree2(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	}
 	root = compile(frontier, nfrontier);
 
-	if (debugopt['M'] || getenv("M")) {
+	if (debugopt['M'] || getenv("M"))
 		dtreedump(stdout, root);
-	}
 
 	return root;
 }
