@@ -13,7 +13,6 @@
 #include "util.h"
 #include "parse.h"
 #include "mi.h"
-#include "dtree.h"
 
 Dtree *gendtree2(Node *m, Node *val, Node **lbl, size_t nlbl, int startid);
 void dtreedump(FILE *fd, Dtree *dt);
