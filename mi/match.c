@@ -43,7 +43,9 @@ newslot(Path *path, Node *pat, Node *val)
 	return s;
 }
 
-// The instances of the struct are immutable.
+/*
+ * The instances of Frontier should be immutable after creation.
+ */
 typedef struct Frontier {
 	int i;
 	Node *lbl;
@@ -386,7 +388,10 @@ genfrontier(int i, Node *val, Node *pat, Node *lbl, Frontier ***frontier, size_t
 	lappend(frontier, nfrontier, fs);
 }
 
-// project updates the input frontier by producing a new the set of slots.
+/*
+ * project generates a new frontier with a new the set of slots by reducing the input slots.
+ * literally, it deletes the slot at the path pi.
+ */
 static Frontier *
 project(Node *pat, Path *pi, Node *val, Frontier *fs)
 {
@@ -396,7 +401,10 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 
 	assert (fs->nslot > 0);
 
-	// select the current frontier when the sub-term val does not present in the frontier fs
+	/*
+	 * copy a new set of slots from fs without the slot at the path pi.
+	 * c points to the slot at the path pi.
+	 */
 	c = NULL;
 	slot = NULL;
 	nslot = 0;
@@ -416,8 +424,10 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	_fs->cap = fs->cap;
 	_fs->ncap = fs->ncap;
 
-	// if the sub-term at pi is not in the frontier,
-	// then we do not reduce the frontier.
+	/*
+	 * if the sub-term at pi is not in the frontier,
+	 * then we do not reduce the frontier.
+	 */
 	if (c == NULL) {
 		return _fs;
 	}
@@ -425,15 +435,19 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	switch (exprop(c->pat)) {
 	case Ovar:
 	case Ogap:
-		// if the pattern at the sub-term pi of this frontier is not a constructor,
-		// then we do not reduce the frontier.
+		/*
+		 * if the pattern at the sub-term pi of this frontier is not a constructor,
+		 * then we do not reduce the frontier.
+		 */
 		return _fs;
 	default:
 		break;
 	}
 
-	// if constructor at the path pi is not the constructor we want to project,
-	// then return null.
+	/*
+	 * if constructor at the path pi is not the constructor we want to project,
+	 * then return null.
+	 */
 	if (!pateq(pat, c->pat)) {
 		return NULL;
 	}
@@ -455,7 +469,7 @@ compile(Frontier **frontier, size_t nfrontier)
 
 	fs = frontier[0];
 
-	// scan constructors horizontally
+	/* scan constructors horizontally */
 	ncons = 0;
 	for (i = 0; i < fs->nslot; i++) {
 		switch (exprop(fs->slot[i]->pat)) {
@@ -474,7 +488,11 @@ compile(Frontier **frontier, size_t nfrontier)
 
 	assert(fs->nslot > 0);
 
-	// always select the first found constructor
+	/* NOTE:
+	 * at the moment we have not implemented any smarter heuristics described in the papers.
+	 * we always select the first found constructor, i.e. the top-left one.
+	 */
+
 	slot = NULL;
 	for (i = 0; i < fs->nslot; i++) {
 		switch (exprop(fs->slot[i]->pat)) {
@@ -488,7 +506,7 @@ compile(Frontier **frontier, size_t nfrontier)
 	}
 
 pi_found:
-	// scan constructors vertically at pi to create the set 'CS'
+	/* scan constructors vertically at pi to create the set 'CS' */
 	cs = NULL;
 	ncs = 0;
 	for (i = 0; i < nfrontier; i++) {
@@ -501,10 +519,11 @@ pi_found:
 				break;
 			case Olit:
 				if (patheq(slot->path, s->path)) {
-
-					// Look for a duplicate entry; we want a unique set of cs.
-					// We could use a hash table, but given that the n is usually small,
-					// an exhaustive search suffices.
+					/* NOTE:
+					 * we could use a hash table, but given that the n is usually small,
+					 * an exhaustive search would suffice.
+					 */
+					/* look for a duplicate entry to skip it; we want a unique set of constructors. */
 					for (k = 0; k < ncs; k++) {
 						if (pateq(cs[k], s->pat)) {
 							break;
@@ -520,7 +539,7 @@ pi_found:
 			}
 		}
 	}
-	// Project a new frontier for each selected constructor
+	/* project a new frontier for each selected constructor */
 	edge = NULL;
 	nedge = 0;
 	_pat = NULL;
@@ -543,14 +562,14 @@ pi_found:
 		}
 	}
 
-	// compile the defaults
+	/* compile the defaults */
 	defaults = NULL;
 	ndefaults = 0;
 	for (i = 0; i < nfrontier; i++) {
 		fs = frontier[i];
 		k = -1;
 		for (j = 0; j < fs->nslot; j++) {
-			// locate the occurrence of pi in fs
+			/* locate the occurrence of pi in fs */
 			if (patheq(slot->path, fs->slot[j]->path)) {
 				k = j;
 			}
@@ -566,7 +585,7 @@ pi_found:
 		any = NULL;
 	}
 
-	// construct the result dtree
+	/* construct the result dtree */
 	_dt = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
 	_dt->load = slot->load;
 	_dt->npat = _npat,
