@@ -391,7 +391,7 @@ genfrontier(int i, Node *val, Node *pat, Node *lbl, Frontier ***frontier, size_t
 static Frontier *
 project(Node *pat, Path *pi, Node *val, Frontier *fs)
 {
-	Frontier *_fs;
+	Frontier *out;
 	Slot *c, **slot;
 	size_t i, nslot;
 
@@ -412,20 +412,20 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 		lappend(&slot, &nslot, fs->slot[i]);
 	}
 
-	_fs = zalloc(sizeof(Frontier));
-	_fs->i = fs->i;
-	_fs->lbl = fs->lbl;
-	_fs->slot = slot;
-	_fs->nslot = nslot;
-	_fs->cap = fs->cap;
-	_fs->ncap = fs->ncap;
+	out = zalloc(sizeof(Frontier));
+	out->i = fs->i;
+	out->lbl = fs->lbl;
+	out->slot = slot;
+	out->nslot = nslot;
+	out->cap = fs->cap;
+	out->ncap = fs->ncap;
 
 	/*
 	 * if the sub-term at pi is not in the frontier,
 	 * then we do not reduce the frontier.
 	 */
 	if (c == NULL)
-		return _fs;
+		return out;
 
 	switch (exprop(c->pat)) {
 	case Ovar:
@@ -434,7 +434,7 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 		 * if the pattern at the sub-term pi of this frontier is not a constructor,
 		 * then we do not reduce the frontier.
 		 */
-		return _fs;
+		return out;
 	default:
 		break;
 	}
@@ -446,18 +446,18 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	if (!pateq(pat, c->pat))
 		return NULL;
 
-	return _fs;
+	return out;
 }
 
 static Dtree *
 compile(Frontier **frontier, size_t nfrontier)
 {
 	size_t i, j, k;
-	Dtree *dt, *_dt, **edge, *any;
-	Frontier *fs, *_fs, **_frontier, **defaults ;
-	Node **cs, **_pat;
+	Dtree *dt, *out, **edge, *any;
+	Frontier *fs, **row, **defaults ;
+	Node **cs, **pat;
 	Slot *slot, *s;
-	size_t ncs, ncons, _nfrontier, nedge, ndefaults, _npat;
+	size_t ncs, ncons, nrow, nedge, ndefaults, npat;
 
 	assert(nfrontier > 0);
 
@@ -475,9 +475,9 @@ compile(Frontier **frontier, size_t nfrontier)
 		}
 	}
 	if (ncons == 0) {
-		dt = mkdtree(fs->lbl->loc, fs->lbl);
-		dt->accept = 1;
-		return dt;
+		out = mkdtree(fs->lbl->loc, fs->lbl);
+		out->accept = 1;
+		return out;
 	}
 
 	assert(fs->nslot > 0);
@@ -534,22 +534,22 @@ pi_found:
 	/* project a new frontier for each selected constructor */
 	edge = NULL;
 	nedge = 0;
-	_pat = NULL;
-	_npat = 0;
+	pat = NULL;
+	npat = 0;
 	for (i = 0; i < ncs; i++) {
-		_frontier = NULL;
-		_nfrontier = 0;
+		row = NULL;
+		nrow = 0;
 		for (j = 0; j < nfrontier; j++) {
 			fs = frontier[j];
-			_fs = project(cs[i], slot->path, slot->load, fs);
-			if (_fs != NULL)
-				lappend(&_frontier, &_nfrontier, _fs);
+			fs = project(cs[i], slot->path, slot->load, frontier[j]);
+			if (fs != NULL)
+				lappend(&row, &nrow, fs);
 		}
 
-		if (_nfrontier > 0) {
-			dt = compile(_frontier, _nfrontier);
+		if (nrow > 0) {
+			dt = compile(row, nrow);
 			lappend(&edge, &nedge, dt);
-			lappend(&_pat, &_npat, cs[i]);
+			lappend(&pat, &npat, cs[i]);
 		}
 	}
 
@@ -574,15 +574,15 @@ pi_found:
 		any = NULL;
 
 	/* construct the result dtree */
-	_dt = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
-	_dt->load = slot->load;
-	_dt->npat = _npat,
-	_dt->pat = _pat,
-	_dt->nnext = nedge;
-	_dt->next = edge;
-	_dt->any = any;
+	out = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
+	out->load = slot->load;
+	out->npat = npat,
+	out->pat = pat,
+	out->nnext = nedge;
+	out->next = edge;
+	out->any = any;
 
-	return _dt;
+	return out;
 }
 
 
