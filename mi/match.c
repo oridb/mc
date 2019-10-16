@@ -153,90 +153,6 @@ mkdtree(Srcloc loc, Node *lbl)
 }
 
 void
-genmatchcode(Dtree *dt, Node ***out, size_t *nout)
-{
-	Node *jmp, *eq, *fail;
-	int emit;
-	size_t i;
-
-	if (dt->emitted)
-		return;
-	dt->emitted = 1;
-
-	/* the we jump to the accept label when generating the parent */
-	if (dt->accept) {
-		jmp = mkexpr(dt->loc, Ojmp, dt->lbl, NULL);
-		jmp->expr.type = mktype(dt->loc, Tyvoid);
-		lappend(out, nout, jmp);
-		return;
-	}
-
-	lappend(out, nout, dt->lbl);
-	for (i = 0; i < dt->nnext; i++) {
-		if (i == dt->nnext - 1 && dt->any) {
-			fail = dt->any->lbl;
-			emit = 0;
-		} else {
-			fail = genlbl(dt->loc);
-			emit = 1;
-		}
-
-		eq = mkexpr(dt->loc, Oeq, dt->load, dt->pat[i], NULL);
-		eq->expr.type = mktype(dt->loc, Tybool);
-		jmp = mkexpr(dt->loc, Ocjmp, eq, dt->next[i]->lbl, fail, NULL);
-		jmp->expr.type = mktype(dt->loc, Tyvoid);
-		lappend(out, nout, jmp);
-
-		genmatchcode(dt->next[i], out, nout);
-		if (emit)
-			lappend(out, nout, fail);
-	}
-	if (dt->any) {
-		jmp = mkexpr(dt->loc, Ojmp, dt->any->lbl, NULL);
-		jmp->expr.type = mktype(dt->loc, Tyvoid);
-		lappend(out, nout, jmp);
-		genmatchcode(dt->any, out, nout);
-	}
-}
-
-void
-genmatch(Node *m, Node *val, Node ***out, size_t *nout)
-{
-	Node **pat, **lbl, *end, *endlbl;
-	size_t npat, nlbl, i;
-	Dtree *dt;
-
-	lbl = NULL;
-	nlbl = 0;
-
-	pat = m->matchstmt.matches;
-	npat = m->matchstmt.nmatches;
-	for (i = 0; i < npat; i++)
-		lappend(&lbl, &nlbl, genlbl(pat[i]->match.block->loc));
-
-
-	endlbl = genlbl(m->loc);
-		dt = gendtree2(m, val, lbl, nlbl, ndtree);
-	genmatchcode(dt, out, nout);
-
-	for (i = 0; i < npat; i++) {
-		end = mkexpr(pat[i]->loc, Ojmp, endlbl, NULL);
-		end->expr.type = mktype(end->loc, Tyvoid);
-		lappend(out, nout, lbl[i]);
-		lappend(out, nout, pat[i]->match.block);
-		lappend(out, nout, end);
-	}
-	lappend(out, nout, endlbl);
-
-	if (debugopt['m']) {
-		dtreedump(stdout, dt);
-		for (i = 0; i < *nout; i++)
-			dumpn((*out)[i], stdout);
-	}
-}
-
-
-void
 dtreedumplit(FILE *fd, Dtree *dt, Node *n, size_t depth)
 {
 	char *s;
@@ -697,6 +613,53 @@ gendtree2(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 }
 
 void
+genmatchcode(Dtree *dt, Node ***out, size_t *nout)
+{
+	Node *jmp, *eq, *fail;
+	int emit;
+	size_t i;
+
+	if (dt->emitted)
+		return;
+	dt->emitted = 1;
+
+	/* the we jump to the accept label when generating the parent */
+	if (dt->accept) {
+		jmp = mkexpr(dt->loc, Ojmp, dt->lbl, NULL);
+		jmp->expr.type = mktype(dt->loc, Tyvoid);
+		lappend(out, nout, jmp);
+		return;
+	}
+
+	lappend(out, nout, dt->lbl);
+	for (i = 0; i < dt->nnext; i++) {
+		if (i == dt->nnext - 1 && dt->any) {
+			fail = dt->any->lbl;
+			emit = 0;
+		} else {
+			fail = genlbl(dt->loc);
+			emit = 1;
+		}
+
+		eq = mkexpr(dt->loc, Oeq, dt->load, dt->pat[i], NULL);
+		eq->expr.type = mktype(dt->loc, Tybool);
+		jmp = mkexpr(dt->loc, Ocjmp, eq, dt->next[i]->lbl, fail, NULL);
+		jmp->expr.type = mktype(dt->loc, Tyvoid);
+		lappend(out, nout, jmp);
+
+		genmatchcode(dt->next[i], out, nout);
+		if (emit)
+			lappend(out, nout, fail);
+	}
+	if (dt->any) {
+		jmp = mkexpr(dt->loc, Ojmp, dt->any->lbl, NULL);
+		jmp->expr.type = mktype(dt->loc, Tyvoid);
+		lappend(out, nout, jmp);
+		genmatchcode(dt->any, out, nout);
+	}
+}
+
+void
 genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size_t *nout, Node ***cap, size_t *ncap)
 {
 	Frontier **frontier;
@@ -712,3 +675,38 @@ genonematch(Node *pat, Node *val, Node *iftrue, Node *iffalse, Node ***out, size
 	genmatchcode(root, out, nout);
 }
 
+void
+genmatch(Node *m, Node *val, Node ***out, size_t *nout)
+{
+	Node **pat, **lbl, *end, *endlbl;
+	size_t npat, nlbl, i;
+	Dtree *dt;
+
+	lbl = NULL;
+	nlbl = 0;
+
+	pat = m->matchstmt.matches;
+	npat = m->matchstmt.nmatches;
+	for (i = 0; i < npat; i++)
+		lappend(&lbl, &nlbl, genlbl(pat[i]->match.block->loc));
+
+
+	endlbl = genlbl(m->loc);
+		dt = gendtree2(m, val, lbl, nlbl, ndtree);
+	genmatchcode(dt, out, nout);
+
+	for (i = 0; i < npat; i++) {
+		end = mkexpr(pat[i]->loc, Ojmp, endlbl, NULL);
+		end->expr.type = mktype(end->loc, Tyvoid);
+		lappend(out, nout, lbl[i]);
+		lappend(out, nout, pat[i]->match.block);
+		lappend(out, nout, end);
+	}
+	lappend(out, nout, endlbl);
+
+	if (debugopt['m']) {
+		dtreedump(stdout, dt);
+		for (i = 0; i < *nout; i++)
+			dumpn((*out)[i], stdout);
+	}
+}
