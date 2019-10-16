@@ -407,18 +407,6 @@ main(int argc, char **argv)
 				.id = 0,
 				.accept = 1,
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0,
-			//	.load = NULL,
-			//	.nnext = 0,
-			//	.npat = 0,
-			//	.any = &(Dtree){
-			//		.id = 1,
-			//		.accept = 1,
-			//	},
-			//}
 		},
 		{
 			.name = "int32 matched by 1 capture variable",
@@ -431,18 +419,6 @@ main(int argc, char **argv)
 				.id = 0,
 				.accept = 1,
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0,
-			//	.load = NULL,
-			//	.nnext = 0,
-			//	.npat = 0,
-			//	.any = &(Dtree){
-			//		.id = 1,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		{
 			.name = "int32 matched by 1 literals",
@@ -471,27 +447,6 @@ main(int argc, char **argv)
 					.accept = 1,
 				},
 			},
-
-//			.dt = &(Dtree){
-//				.id = 0,
-//				.nconstructors = 0x100000000,
-//				.load = gentemp(Zloc, _int32, NULL),
-//				.nnext = 1,
-//				.npat = 1,
-//				.pat = (Node*[]){
-//					[0] = p0,//t2p0,
-//				},
-//				.next = (Dtree*[]){
-//					[0] = &(Dtree){
-//						.id = 1,
-//						.accept = 1,
-//					},
-//				},
-//				.any = &(Dtree){
-//					.id = 2,
-//					.accept = 1,
-//				},
-//			}
 		},
 		{
 			.name = "int32 matched by 2 literals",
@@ -526,33 +481,6 @@ main(int argc, char **argv)
 					.accept = 1,
 				},
 			},
-
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0x100000000,
-			//	.load = gentemp(Zloc, _int32, NULL),
-			//	.nnext = 2,
-			//	.npat = 2,
-			//	.pat = (Node*[]){
-			//		[0] = P(0),
-			//		[1] = P(1),
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 1,
-			//			.accept = 1,
-			//		},
-			//		[1] = &(Dtree){
-			//			.id = 2,
-			//			.accept = 1,
-			//		},
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 3,
-			//		.accept = 1,
-			//	},
-			//}
 		},
 		{
 			.name = "1-tuple, matched by wildcard only",
@@ -568,26 +496,6 @@ main(int argc, char **argv)
 				.npat = 0,
 				.any = NULL,
 			},
-
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	/*
-			//	 * We compute the .nconstructors and .load only for literal and union patterns.
-			//	 */
-			//	.nconstructors = 0,
-			//	.load = NULL,
-			//	.nnext = 0,
-			//	.npat = 0,
-			//	.pat = (Node*[]){
-			//	},
-			//	.next = (Dtree*[]){
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 1,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		{
 			.name = "1-tuple",
@@ -616,30 +524,6 @@ main(int argc, char **argv)
 					.accept = 1
 				},
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	/*
-			//	 * We compute the .nconstructors and .load only for literal and union patterns.
-			//	 */
-			//	.nconstructors = 0x100000000,
-			//	.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
-			//	.nnext = 1,
-			//	.npat = 1,
-			//	.pat = (Node*[]){
-			//		P(0)->expr.args[0],
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 1,
-			//			.accept = 1,
-			//		},
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 2,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		{
 			.name = "2-tuple",
@@ -692,46 +576,6 @@ main(int argc, char **argv)
 					.accept = 1,
 				}
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0x100000000,
-			//	.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
-			//	.nnext = 1,
-			//	.npat = 1,
-			//	.pat = (Node*[]){
-			//		P(0)->expr.args[0],
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 2,
-			//			.nconstructors = 0x100000000,
-			//			.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
-			//			.nnext = 1,
-			//			.npat = 1,
-			//			.pat = (Node*[]){
-			//				P(0)->expr.args[1],
-			//			},
-			//			.next = (Dtree*[]){
-			//				[0] = &(Dtree){
-			//					.id = 1,
-			//					.accept = 1,
-			//				},
-			//			},
-			//			.any = &(Dtree){
-			//				.id = 3,
-			//				.accept = 1,
-			//			},
-			//		},
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 4,
-			//		.any = &(Dtree){
-			//			.id = 3,
-			//			.accept = 1,
-			//		},
-			//	},
-			//},
 		},
 		{
 			.name = "3-tuple",
@@ -800,68 +644,6 @@ main(int argc, char **argv)
 					.accept =1,
 				},
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0x100000000,
-			//	.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
-			//	.nnext = 1,
-			//	.npat = 1,
-			//	.pat = (Node*[]){
-			//		P(0)->expr.args[0],
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 2,
-			//			.nconstructors = 0x100000000,
-			//			.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
-			//			.nnext = 1,
-			//			.npat = 1,
-			//			.pat = (Node*[]){
-			//				P(0)->expr.args[1],
-			//			},
-			//			.next = (Dtree*[]){
-			//				[0] = &(Dtree){
-			//					.id = 3,
-			//					.nconstructors = 0x100000000,
-			//					.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
-			//					.nnext = 1,
-			//					.npat = 1,
-			//					.pat = (Node*[]){
-			//						P(0)->expr.args[2],
-			//					},
-			//					.next =  (Dtree*[]){
-			//						[0] = &(Dtree){
-			//							.id = 1,
-			//							.accept = 1,
-			//						},
-			//					},
-			//					.any = &(Dtree){
-			//						.id = 4,
-			//						.accept = 1,
-			//					},
-			//				},
-			//			},
-			//			.any = &(Dtree){
-			//				.id = 6,
-			//				.any = &(Dtree){
-			//					.id = 4,
-			//					.accept = 1,
-			//				},
-			//			},
-			//		},
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 5,
-			//		.any = &(Dtree){
-			//			.id = 6,
-			//			.any = &(Dtree){
-			//				.id = 4,
-			//				.accept = 1,
-			//			},
-			//		},
-			//	},
-			//},
 		},
 		{
 			.name = "3-tuple-3-pat",
@@ -1041,27 +823,6 @@ main(int argc, char **argv)
 					.accept = 1,
 				},
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0,
-			//	.load = ty(mkexpr(Zloc, Omemb, T, tybase(exprtype(P(0)))->sdecls[0]->decl.name, NULL), _int32),
-			//	.nnext = 1,
-			//	.npat = 1,
-			//	.pat = (Node*[]){
-			//		P(0)->expr.args[0],
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 1,
-			//			.accept = 1,
-			//		},
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 2,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		{
 			.name = "1-enum, matched by wildcard only",
@@ -1074,22 +835,6 @@ main(int argc, char **argv)
 				.id = 0,
 				.accept = 1,
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0,
-			//	.load = NULL,
-			//	.nnext = 0,
-			//	.npat = 0,
-			//	.pat = (Node*[]){
-			//	},
-			//	.next = (Dtree*[]){
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 1,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		{
 			.name = "1-enum, matched by a valid constructor",
@@ -1122,30 +867,6 @@ main(int argc, char **argv)
 					.accept = 1,
 				},
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 1,
-			//	.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
-			//	.nnext = 1,
-			//	.npat = 1,
-			//	.pat = (Node*[]){
-			//		/*
-			//		 * the matcher will convert the Oucon expr to an Nlit for the Dtree
-			//		 */
-			//		ty(mkintlit(Zloc, finducon(_enum1, P(0)->expr.args[0])->id), _int32),
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 1,
-			//			.accept = 1,
-			//		},
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 2,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		/**
 		 * match v : _enum2
@@ -1160,7 +881,6 @@ main(int argc, char **argv)
 			.pats = (Node*[]) {
 				__P0(ty(mkexpr(Zloc, Oucon, mkname(Zloc, "Foo"), NULL), _enum2)),
 				__P1(ty(mkexpr(Zloc, Oucon, mkname(Zloc, "Bar"), NULL), _enum2)),
-				//p_ = ty(mkexpr(Zloc, Ogap, NULL), _enum1),
 
 				NULL,
 			},
@@ -1185,29 +905,6 @@ main(int argc, char **argv)
 				},
 				.any = NULL,
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 2,
-			//	.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
-			//	.nnext = 2,
-			//	.npat = 2,
-			//	.pat = (Node*[]){
-			//		ty(mkintlit(Zloc, finducon(_enum2, P(0)->expr.args[0])->id), _int32),
-			//		ty(mkintlit(Zloc, finducon(_enum2, P(1)->expr.args[0])->id), _int32),
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 1,
-			//			.accept = 1,
-			//		},
-			//		[1] = &(Dtree){
-			//			.id = 2,
-			//			.accept = 1,
-			//		},
-			//	},
-			//	.any = NULL,
-			//},
 		},
 		{
 			.name = "3-enum, matched by 3 valid constructors",
@@ -1244,34 +941,6 @@ main(int argc, char **argv)
 				},
 				.any = NULL,
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 3,
-			//	.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
-			//	.nnext = 3,
-			//	.npat = 3,
-			//	.pat = (Node*[]){
-			//		ty(mkintlit(Zloc, finducon(_enum3, P(0)->expr.args[0])->id), _int32),
-			//		ty(mkintlit(Zloc, finducon(_enum3, P(1)->expr.args[0])->id), _int32),
-			//		ty(mkintlit(Zloc, finducon(_enum3, P(2)->expr.args[0])->id), _int32),
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 1,
-			//			.accept = 1,
-			//		},
-			//		[1] = &(Dtree){
-			//			.id = 2,
-			//			.accept = 1,
-			//		},
-			//		[2] = &(Dtree){
-			//			.id = 3,
-			//			.accept = 1,
-			//		},
-			//	},
-			//	.any = NULL,
-			//},
 		},
 		{
 			.name = "1-int32-array, matched by an element",
@@ -1307,27 +976,6 @@ main(int argc, char **argv)
 					.accept = 1,
 				},
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0,
-			//	.load = ty(mkexpr(Zloc, Oidx, T, ty(mkintlit(Zloc, 0), _int64), NULL), _int32),
-			//	.nnext = 1,
-			//	.npat = 1,
-			//	.pat = (Node*[]){
-			//		P(0)->expr.args[0],
-			//	},
-			//	.next = (Dtree*[]){
-			//		[0] = &(Dtree){
-			//			.id = 1,
-			//			.accept = 1,
-			//		},
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 2,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		/**
 		 * | `Foo (int32)
@@ -1343,22 +991,6 @@ main(int argc, char **argv)
 				.id = 0,
 				.accept = 1,
 			},
-
-			//.dt = &(Dtree){
-			//	.id = 0,
-			//	.nconstructors = 0,
-			//	.load = NULL,
-			//	.nnext = 0,
-			//	.npat = 0,
-			//	.pat = (Node*[]){
-			//	},
-			//	.next = (Dtree*[]){
-			//	},
-			//	.any = &(Dtree){
-			//		.id = 1,
-			//		.accept = 1,
-			//	},
-			//},
 		},
 		{
 			.name = "1-union of 1-tuple",
