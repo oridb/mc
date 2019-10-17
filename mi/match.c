@@ -20,11 +20,36 @@ void dtreedump(FILE *fd, Dtree *dt);
 
 static int ndtree;
 
+/* Path is a integer sequence that labels a subtree of a subject tree.
+ * For example,
+ * 0 is the root
+ * 0,0 and 0,1 are two subtrees of the root.
+ *
+ * Note: the order of the sequence is reversed with regard to the reference paper.
+ *
+ * Each pattern of a match rule conrresponds to a unique Path of the subject tree.
+ * When we have m match rules, for a given Path, there can be at most m patterns associated with the Path.
+ *
+ * Given
+ * match v
+ * | (11, 12, 13)
+ * | (21, 22, 23)
+ * | (31, 32, 33)
+ * | _
+ *
+ * the entries 11, 21, 31 and the wildcard pattern at the bottom have the same Path 0,1
+ *             12, 22, 32 have the same Path 0,2
+ *             13, 23, 33 have the same Path 0,3
+ */
 typedef struct Path {
 	unsigned char len;
 	unsigned char *p;
 } Path;
 
+/* Slot bundles a pattern with its corresponding Path and load value.
+ * The compiler will generate a comparison instruction for each (pat, load) pair.
+ * Each match rule corresponds to a list of slots which is populated by addrec.
+ */
 typedef struct Slot {
 	Path *path;
 	Node *pat;
@@ -43,15 +68,15 @@ newslot(Path *path, Node *pat, Node *val)
 	return s;
 }
 
-/*
+/* Frontier bundles a list of slots to be matched for a specific match rule.
  * The instances of Frontier should be immutable after creation.
  */
 typedef struct Frontier {
-	int i;
-	Node *lbl;
-	Slot  **slot;
+	int i; 			/* index of the match rules from top to bottom */
+	Node *lbl; 		/* branch target when the rule is matched */
+	Slot  **slot; 		/* unmatched slots (Paths) for this match rule */
 	size_t nslot;
-	Node **cap;
+	Node **cap; 		/* the captured variables of the pattern of this match rule */
 	size_t ncap;
 } Frontier;
 
@@ -324,6 +349,10 @@ nconstructors(Type *t)
 	return 0;
 }
 
+/* addrec generates a list of slots for a Frontier by walking a pattern tree.
+ * It collects only the terminal patterns like union tags and literals.
+ * Non-terminal patterns like tuple/struct/array help encode the path only.
+ */
 static void
 addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 {
@@ -498,6 +527,24 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	return out;
 }
 
+/* compile implements the algorithm outlined in the paper "When Do Match-Compilation Heuristics Matter?" by Kevin Scott and Norman Ramsey
+ * It generates either a TEST or MATCH (accept=1) dtree, where MATCH is the base case.
+ *
+ * Summary:
+ * 1. if the first Frontier of the input list of Frontiers does not contain any non-wildcard pattern, return a MATCH dtree (accept=1)
+ * 2. for each call to the function, it will select a Path from the first match rule in the input Frontiers.
+ * 3. scan the input frontiers 'vertically' at the selected Path to form a set of unique constructors. (the list 'cs')
+ * 4. for each constructor in 'cs', recursively compile the 'projected' frontiers, which is roughly the frontiers minus the slot at the Path.
+ * 5. recursively compile the remaining Frontiers (if any) corresponding to the matches rules with a wildcard at the selected Path.
+ * 6. return a new dtree, where the compiled outputs at step 4 form the outgoing edges (dt->next), and the one produced at step 5 serves as the default edage (dt->any)
+ *
+ * NOTE:
+ * a. how we select the Path at the step 2 is determined by heuristics.
+ * b. we don't expand the frontiers at the 'project' step as the reference paper does.
+ *    rather, we separate the whole compile algorithm into two phases:
+ *    1) construction of the initial frontiers by 'addrec.
+ *    2) construction of the decision tree (with the generated frontiers) by 'compile
+ */
 static Dtree *
 compile(Frontier **frontier, size_t nfrontier)
 {
