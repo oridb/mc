@@ -47,7 +47,6 @@ struct Dtree {
 	size_t nconstructors;
 	char accept;
 	char emitted;
-	char ptrwalk;
 
 	/* the decision tree step */
 	Node **pat;
@@ -55,10 +54,6 @@ struct Dtree {
 	Dtree **next;
 	size_t nnext;
 	Dtree *any;
-
-	/* captured variables and action */
-	Node **cap;
-	size_t ncap;
 };
 
 /* dataflow analysis */
