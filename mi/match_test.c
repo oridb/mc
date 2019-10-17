@@ -81,7 +81,7 @@ installucons(Type *t)
 }
 
 static Node *
-_m(Node *p)
+mkdummymatch(Node *p)
 {
 	Node *b;
 
@@ -245,7 +245,7 @@ test_match(int idx, Node *val, Node **pat, Dtree *want)
 	matches = NULL;
 	nmatches = 0;
 	for (npat = 0; pat[npat] != NULL; npat++) {
-		lappend(&matches, &nmatches, _m(pat[npat]));
+		lappend(&matches, &nmatches, mkdummymatch(pat[npat]));
 	}
 
 	m = mkmatchstmt(Zloc, val, matches, nmatches);
