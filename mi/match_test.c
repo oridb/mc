@@ -183,9 +183,6 @@ dtequal(Dtree *a, Dtree *b, int depth)
 	if (a->emitted != b->emitted)
 		return errorf("emitted is not matched. (depth:%d id:%d) want %ld, got %ld", depth, a->id, a->emitted, b->emitted);
 
-	if (a->ptrwalk != b->ptrwalk)
-		return errorf("ptrwalk is not matched. (depth:%d id:%d) want %ld, got %ld", depth, a->id, a->ptrwalk, b->ptrwalk);
-
 	err = exprequal(a->load, b->load, 0);
 	if (err != NULL) {
 		fprintf(stderr, "WANT:\n");
@@ -197,12 +194,6 @@ dtequal(Dtree *a, Dtree *b, int depth)
 
 	if (a->nnext != b->nnext)
 		return errorf("nnext is not matched. (depth:%d id:%d) want %d, got %d", depth, a->id, a->nnext, b->nnext);
-
-	if (a->npat != b->npat)
-		return errorf("npat is not matched. (depth:%d id:%d) want %d, got %d", depth, a->id, a->npat, b->npat);
-
-	if (a->ncap != b->ncap)
-		return errorf("ncap is not matched. (depth:%d id:%d) want %d, got %d", depth, a->id, a->ncap, b->ncap);
 
 	for (i = 0; i < a->npat; i++) {
 		err = exprequal(a->pat[i], b->pat[i], 0);
@@ -222,12 +213,6 @@ dtequal(Dtree *a, Dtree *b, int depth)
 	err = dtequal(a->any, b->any, depth+1);
 	if (err != NULL)
 		return errorf("any is not matched. (depth:%d id:%d) want %p, got %p, %s", depth, a->id, a->any, b->any, err);
-
-	for (i = 0; i < a->ncap; i++) {
-		err = exprequal(a->cap[i], b->cap[i], 0);
-		if (err != NULL)
-			return err;
-	}
 
 	return NULL;
 }
@@ -366,9 +351,6 @@ main(int argc, char **argv)
 		mkdecl(Zloc, mkname(Zloc, "s2_int32"), _int32),
 	}, 3);
 
-	(void)_bug002s;
-
-
 
 	Dtree *dt11 = &(Dtree){
 		.id = 11,
@@ -383,7 +365,7 @@ main(int argc, char **argv)
 	Test tests[] = {
 		{
 			.name = "int32 matched by 1 wildcard",
-			.val  = gentemp(Zloc, _int32, NULL),
+			.val  = __T(gentemp(Zloc, _int32, NULL)),
 			.pats = (Node*[]){
 				ty(mkexpr(Zloc, Ogap, NULL), _int32),
 				NULL,
@@ -407,7 +389,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "int32 matched by 1 literals",
-			.val = gentemp(Zloc, _int32, NULL),
+			.val = __T(gentemp(Zloc, _int32, NULL)),
 			.pats = (Node*[]){
 				__P0(ty(mkexpr(Zloc, Olit, mkint(Zloc, 123), NULL), _int32)),
 				__P_(ty(mkexpr(Zloc, Ogap, NULL), _int32)),
@@ -436,7 +418,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "int32 matched by 2 literals",
-			.val = gentemp(Zloc, _int32, NULL),
+			.val = __T(gentemp(Zloc, _int32, NULL)),
 			.pats = (Node*[]){
 				__P0(ty(mkexpr(Zloc, Olit, mkint(Zloc, 123), NULL), _int32)),
 				__P1(ty(mkexpr(Zloc, Olit, mkint(Zloc, 456), NULL), _int32)),
@@ -471,7 +453,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "1-tuple, matched by wildcard only",
-			.val = gentemp(Zloc, _int32t1, NULL),
+			.val = __T(gentemp(Zloc, _int32t1, NULL)),
 			.pats = (Node*[]){
 				ty(mkexpr(Zloc, Otup, ty(mkexpr(Zloc, Ogap, NULL), _int32), NULL), _int32t1),
 				NULL,
@@ -486,7 +468,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "1-tuple",
-			.val = ({t = gentemp(Zloc, _int32t1, NULL);}),
+			.val = __T(gentemp(Zloc, _int32t1, NULL)),
 			.pats = (Node *[]){
 				__P0(ty(mkexpr(Zloc, Otup, ty(mkexpr(Zloc, Olit, mkint(Zloc, 123), NULL), _int32), NULL), _int32t1)),
 				__P1(ty(mkexpr(Zloc, Ogap, NULL), _int32t1)),
@@ -515,7 +497,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "2-tuple",
-			.val = ({t = gentemp(Zloc, _int32t2, NULL);}),
+			.val = __T(gentemp(Zloc, _int32t2, NULL)),
 			.pats = (Node *[]){
 				/**
 				 * | (123, 456):
@@ -569,7 +551,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "3-tuple",
-			.val = ({t = gentemp(Zloc, _int32t3, NULL);}),
+			.val = __T(gentemp(Zloc, _int32t3, NULL)),
 			.pats = (Node *[]){
 				/**
 				 * | (123, 456):
@@ -640,7 +622,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "3-tuple-3-pat",
-			.val = ({t = gentemp(Zloc, _int32t3, NULL);}),
+			.val = __T(gentemp(Zloc, _int32t3, NULL)),
 			.pats = (Node *[]){
 				/**
 				 * | (123, 456):
@@ -797,7 +779,7 @@ main(int argc, char **argv)
 
 		{
 			.name = "1-int32-struct",
-			.val = ({t = gentemp(Zloc, _int32s1, NULL);}),
+			.val = __T(gentemp(Zloc, _int32s1, NULL)),
 			.pats = (Node*[]){
 				__P0(ty(mkexprl(Zloc, Ostruct, (Node*[]){mkidxinit(Zloc, mkname(Zloc, "foo"), mkintlit(Zloc, 123))}, 1), _int32s1)),
 				__P_(ty(mkexpr(Zloc, Ogap, NULL), _int32s1)),
@@ -827,7 +809,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "1-enum, matched by wildcard only",
-			.val = gentemp(Zloc, _enum1, NULL),
+			.val = __T(gentemp(Zloc, _enum1, NULL)),
 			.pats = (Node*[]){
 				__P_( ty(mkexpr(Zloc, Ogap, NULL), _enum1)),
 				NULL,
@@ -839,7 +821,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "1-enum, matched by a valid constructor",
-			.val = ({t = gentemp(Zloc, _enum1, NULL);}),
+			.val = __T(gentemp(Zloc, _enum1, NULL)),
 			.pats = (Node*[]){
 				__P0(ty(mkexpr(Zloc, Oucon, mkname(Zloc, "Foo"), NULL), _enum1)),
 				__P_(ty(mkexpr(Zloc, Ogap, NULL), _enum1)),
@@ -878,7 +860,7 @@ main(int argc, char **argv)
 		 */
 		{
 			.name = "2-enum, matched by 2 valid constructors",
-			.val = ({t = gentemp(Zloc, _enum2, NULL);}),
+			.val = __T(gentemp(Zloc, _enum2, NULL)),
 			.pats = (Node*[]) {
 				__P0(ty(mkexpr(Zloc, Oucon, mkname(Zloc, "Foo"), NULL), _enum2)),
 				__P1(ty(mkexpr(Zloc, Oucon, mkname(Zloc, "Bar"), NULL), _enum2)),
@@ -910,7 +892,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "3-enum, matched by 3 valid constructors",
-			.val = ({t = gentemp(Zloc, _enum3, NULL);}),
+			.val = __T(gentemp(Zloc, _enum3, NULL)),
 			.pats = (Node*[]) {
 				__P0(ty(mkexpr(Zloc, Oucon, mkname(Zloc, "Foo"), NULL), _enum3)),
 				__P1(ty(mkexpr(Zloc, Oucon, mkname(Zloc, "Bar"), NULL), _enum3)),
@@ -985,7 +967,7 @@ main(int argc, char **argv)
 		 */
 		{
 			.name = "1-union of 1-tuple, matched by wildcard only",
-			.val = gentemp(Zloc, _int32u1, NULL),
+			.val = __T(gentemp(Zloc, _int32u1, NULL)),
 			.pats = (Node*[]){
 				__P_(ty(mkexpr(Zloc, Ogap, NULL), _int32u1)),
 				NULL,
@@ -1052,7 +1034,7 @@ main(int argc, char **argv)
 		},
 		{
 			.name = "bug1",
-			.val = gentemp(Zloc, _bug002s, NULL),
+			.val = __T(gentemp(Zloc, _bug002s, NULL)),
 			.pats = (Node*[]){
 				__P0(ty(mkexprl(Zloc, Ostruct, (Node*[]){
 					mkidxinit(Zloc, mkname(Zloc, "s2_ufoo"),
