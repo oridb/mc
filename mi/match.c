@@ -644,8 +644,7 @@ pi_found:
 		out->nconstructors = nconstructors(tybase(exprtype(slot->load)));
 		break;
 	default:
-		fprintf(stderr, "%s:%u op:%s ty:%s\n", __func__, __LINE__, opstr[exprop(slot->load)], tystr(tybase(exprtype(slot->load))));
-		assert(0);
+		fatal(slot->pat, "unsupported pattern %s of type %s", opstr[exprop(slot->pat)], tystr(exprtype(slot->pat)));
 	}
 	return out;
 }
