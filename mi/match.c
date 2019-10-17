@@ -542,8 +542,8 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
  * a. how we select the Path at the step 2 is determined by heuristics.
  * b. we don't expand the frontiers at the 'project' step as the reference paper does.
  *    rather, we separate the whole compile algorithm into two phases:
- *    1) construction of the initial frontiers by 'addrec.
- *    2) construction of the decision tree (with the generated frontiers) by 'compile
+ *    1) construction of the initial frontiers by 'addrec'.
+ *    2) construction of the decision tree (with the generated frontiers) by 'compile'
  */
 static Dtree *
 compile(Frontier **frontier, size_t nfrontier)
