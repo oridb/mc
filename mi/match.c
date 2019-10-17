@@ -696,7 +696,6 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	if (debugopt['M'] || getenv("M"))
 		dtreedump(stdout, root);
 	if (!verifymatch(root)) {
-		dtreedump(stdout, root);
 		fatal(m, "nonexhaustive pattern set in match statement");
 	}
 
