@@ -416,6 +416,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 2,
 				.load = gentemp(Zloc, _int32, NULL),
+				.nconstructors = 4294967296,
 				.nnext = 1,
 				.npat = 1,
 				.pat = (Node*[]){
@@ -445,6 +446,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 3,
 				.load = gentemp(Zloc, _int32, NULL),
+				.nconstructors = 4294967296,
 				.npat = 2,
 				.nnext = 2,
 				.pat = (Node*[]){
@@ -493,6 +495,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 2,
 				.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
+				.nconstructors = 4294967296,
 				.nnext = 1,
 				.npat = 1,
 				.pat =  (Node*[]){
@@ -530,6 +533,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 4,
 				.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
+				.nconstructors = 4294967296,
 				.nnext = 1,
 				.npat = 1,
 				.pat = (Node*[]){
@@ -539,6 +543,7 @@ main(int argc, char **argv)
 					[0] = &(Dtree){
 						.id = 2,
 						.load =ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
+						.nconstructors = 4294967296,
 						.nnext = 1,
 						.npat = 1,
 						.pat = (Node*[]){
@@ -583,6 +588,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 6,
 				.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
+				.nconstructors = 4294967296,
 				.nnext = 1,
 				.npat = 1,
 				.pat = (Node*[]){
@@ -592,6 +598,7 @@ main(int argc, char **argv)
 					[0] = &(Dtree){
 						.id = 4,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
+						.nconstructors = 4294967296,
 						.nnext = 1,
 						.npat = 1,
 						.pat = (Node*[]){
@@ -601,6 +608,7 @@ main(int argc, char **argv)
 							[0] = &(Dtree){
 								.id = 2,
 								.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
+								.nconstructors = 4294967296,
 								.nnext = 1,
 								.npat = 1,
 								.pat = (Node*[]){
@@ -662,6 +670,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 16,
 				.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
+				.nconstructors = 4294967296,
 				.nnext = 3,
 				.npat = 3,
 				.pat = (Node*[]){
@@ -673,6 +682,7 @@ main(int argc, char **argv)
 					[0] = &(Dtree){
 						.id = 4,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
+						.nconstructors = 4294967296,
 						.nnext = 1,
 						.npat = 1,
 						.pat = (Node*[]){
@@ -682,6 +692,7 @@ main(int argc, char **argv)
 							[0] = &(Dtree){
 								.id = 2,
 								.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
+								.nconstructors = 4294967296,
 								.nnext = 1,
 								.npat = 1,
 								.pat = (Node*[]){
@@ -707,6 +718,7 @@ main(int argc, char **argv)
 					[1] = &(Dtree){
 						.id = 9,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
+						.nconstructors = 4294967296,
 						.nnext = 1,
 						.npat = 1,
 						.pat = (Node*[]){
@@ -716,6 +728,7 @@ main(int argc, char **argv)
 							[0] = &(Dtree){
 								.id = 7,
 								.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
+								.nconstructors = 4294967296,
 								.nnext = 1,
 								.npat = 1,
 								.pat = (Node*[]){
@@ -741,6 +754,7 @@ main(int argc, char **argv)
 					[2] = &(Dtree){
 						.id = 14,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
+						.nconstructors = 4294967296,
 						.nnext = 1,
 						.npat = 1,
 						.pat = (Node*[]){
@@ -750,6 +764,7 @@ main(int argc, char **argv)
 							[0] = &(Dtree){
 								.id = 12,
 								.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
+								.nconstructors = 4294967296,
 								.nnext = 1,
 								.npat = 1,
 								.pat = (Node*[]){
@@ -792,6 +807,7 @@ main(int argc, char **argv)
 				.id = 2,
 				.nconstructors = 0,
 				.load = ty(mkexpr(Zloc, Omemb, T, tybase(exprtype(P(0)))->sdecls[0]->decl.name, NULL), _int32),
+				.nconstructors = 4294967296,
 				.nnext = 1,
 				.npat = 1,
 				.pat = (Node*[]){
@@ -831,7 +847,7 @@ main(int argc, char **argv)
 			},
 			.dt = &(Dtree){
 				.id = 2,
-				.nconstructors = 0,
+				.nconstructors = 1,
 				.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
 				.nnext = 1,
 				.npat = 1,
@@ -872,6 +888,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 2,
 				.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
+				.nconstructors = 2,
 				.nnext = 2,
 				.npat = 2,
 				.pat = (Node*[]){
@@ -903,6 +920,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 3,
 				.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
+				.nconstructors = 3,
 				.nnext = 3,
 				.npat = 3,
 				.pat = (Node*[]){
@@ -943,7 +961,7 @@ main(int argc, char **argv)
 			},
 			.dt = &(Dtree){
 				.id = 2,
-				.nconstructors = 0,
+				.nconstructors = 4294967296,
 				.load = ty(mkexpr(Zloc, Oidx, T, ty(mkintlit(Zloc, 0), _int64), NULL), _int32),
 				.nnext = 1,
 				.npat = 1,
@@ -992,6 +1010,7 @@ main(int argc, char **argv)
 			.dt = &(Dtree){
 				.id = 4,
 				.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
+				.nconstructors = 1,
 				.nnext = 1,
 				.npat = 1,
 				.pat = (Node*[]){
@@ -1007,6 +1026,7 @@ main(int argc, char **argv)
 								  ty(mkexpr(Zloc, Oudata, T, NULL), _int32t1),
 								  mkintlit(Zloc, 0),
 								  NULL), _int32),
+						.nconstructors = 4294967296,
 						.nnext = 1,
 						.npat = 1,
 						.pat = (Node*[]){
@@ -1047,6 +1067,7 @@ main(int argc, char **argv)
 				.load = ty(mkexpr(Zloc, Outag,
 						  ty(mkexpr(Zloc, Omemb, T, tybase(exprtype(P(0)))->sdecls[0]->decl.name, NULL), _bug001u),
 						  NULL), _int32),
+				.nconstructors = 2,
 				.nnext = 1,
 				.npat = 1,
 				.pat = (Node*[]){
@@ -1056,6 +1077,7 @@ main(int argc, char **argv)
 					[0] = &(Dtree){
 						.id = 2,
 						.load = ty(mkexpr(Zloc, Oudata, ty(mkexpr(Zloc, Omemb, T, tybase(exprtype(P(0)))->sdecls[0]->decl.name, NULL), _int32), NULL), _int32t1),
+						.nconstructors = 1,
 						.nnext = 1,
 						.npat = 1,
 						.pat = (Node*[]){

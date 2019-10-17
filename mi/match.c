@@ -275,6 +275,55 @@ pathdump(Path *p, FILE *out)
 	fprintf(out, "\n");
 }
 
+static size_t
+nconstructors(Type *t)
+{
+	if (!t)
+		return 0;
+
+	t = tybase(t);
+	switch (t->type) {
+	case Tyvoid:return 1;break;
+	case Tybool:return 2;break;
+	case Tychar:return 0x10ffff;break;
+
+		    /* signed ints */
+	case Tyint8:return 0x100;break;
+	case Tyint16:return 0x10000;break;
+	case Tyint32:return 0x100000000;break;
+	case Tyint:return 0x100000000;break;
+	case Tyint64:return ~0ull;break;
+
+		     /* unsigned ints */
+	case Tybyte:return 0x100;break;
+	case Tyuint8:return 0x100;break;
+	case Tyuint16:return 0x10000;break;
+	case Tyuint32:return 0x100000000;break;
+	case Tyuint:return 0x100000000;break;
+	case Tyuint64:return ~0ull;break;
+
+		      /* floats */
+	case Tyflt32:return ~0ull;break;
+	case Tyflt64:return ~0ull;break;
+
+		     /* complex types */
+	case Typtr:return 1;break;
+	case Tyarray:return 1;break;
+	case Tytuple:return 1;break;
+	case Tystruct:  return 1;
+	case Tyunion:return t->nmemb;break;
+	case Tyslice:return ~0ULL;break;
+
+	case Tyvar: case Typaram: case Tyunres: case Tyname:
+	case Tybad: case Tyvalist: case Tygeneric: case Ntypes:
+	case Tyfunc: case Tycode:
+		     die("Invalid constructor type %s in match", tystr(t));
+		     break;
+
+	}
+	return 0;
+}
+
 static void
 addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 {
@@ -582,9 +631,42 @@ pi_found:
 	out->next = edge;
 	out->any = any;
 
+	switch (exprop(slot->load)) {
+	case Outag:
+		out->nconstructors = nconstructors(tybase(exprtype(slot->load->expr.args[0])));
+		break;
+	case Oudata:
+	case Omemb:
+	case Otupget:
+	case Oidx:
+	case Oderef:
+	case Ovar:
+		out->nconstructors = nconstructors(tybase(exprtype(slot->load)));
+		break;
+	default:
+		fprintf(stderr, "%s:%u op:%s ty:%s\n", __func__, __LINE__, opstr[exprop(slot->load)], tystr(tybase(exprtype(slot->load))));
+		assert(0);
+	}
 	return out;
 }
 
+static int
+verifymatch(Dtree *t)
+{
+	size_t i;
+	int ret;
+
+	if (t->accept)
+		return 1;
+
+	ret = 0;
+	if (t->nnext == t->nconstructors || t->any)
+		ret = 1;
+	for (i = 0; i < t->nnext; i++)
+		if (!verifymatch(t->next[i]))
+			ret = 0;
+	return ret;
+}
 
 Dtree *
 gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
@@ -614,6 +696,10 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 
 	if (debugopt['M'] || getenv("M"))
 		dtreedump(stdout, root);
+	if (!verifymatch(root)) {
+		dtreedump(stdout, root);
+		fatal(m, "nonexhaustive pattern set in match statement");
+	}
 
 	return root;
 }
