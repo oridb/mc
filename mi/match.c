@@ -78,6 +78,7 @@ typedef struct Frontier {
 	size_t nslot;
 	Node **cap; 		/* the captured variables of the pattern of this match rule */
 	size_t ncap;
+	Dtree *final;		/* final state, shared by all Frontiers for a specific (indxed by i) match rule */
 } Frontier;
 
 static Node *
@@ -458,6 +459,8 @@ genfrontier(int i, Node *val, Node *pat, Node *lbl, Frontier ***frontier, size_t
 	fs = zalloc(sizeof(Frontier));
 	fs->i = i;
 	fs->lbl = lbl;
+	fs->final = mkdtree(lbl->loc, lbl);
+	fs->final->accept = 1;
 	addrec(fs, pat, val, newpath(NULL, 0));
 	lappend(frontier, nfrontier, fs);
 }
@@ -497,6 +500,7 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	out->nslot = nslot;
 	out->cap = fs->cap;
 	out->ncap = fs->ncap;
+	out->final = fs->final;
 
 	/*
 	 * if the sub-term at pi is not in the frontier,
@@ -571,9 +575,7 @@ compile(Frontier **frontier, size_t nfrontier)
 		}
 	}
 	if (ncons == 0) {
-		out = mkdtree(fs->lbl->loc, fs->lbl);
-		out->accept = 1;
-		return out;
+		return fs->final;
 	}
 
 	assert(fs->nslot > 0);

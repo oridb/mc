@@ -513,7 +513,7 @@ main(int argc, char **argv)
 				NULL,
 			},
 			.dt = &(Dtree){
-				.id = 4,
+				.id = 3,
 				.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
 				.nconstructors = 4294967296,
 				.nnext = 1,
@@ -544,7 +544,7 @@ main(int argc, char **argv)
 					},
 				},
 				.any = &(Dtree){
-					.id = 3,
+					.id = 1,
 					.accept = 1,
 				}
 			},
@@ -568,7 +568,7 @@ main(int argc, char **argv)
 				NULL,
 			},
 			.dt = &(Dtree){
-				.id = 6,
+				.id = 4,
 				.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
 				.nconstructors = 4294967296,
 				.nnext = 1,
@@ -578,7 +578,7 @@ main(int argc, char **argv)
 				},
 				.next = (Dtree*[]){
 					[0] = &(Dtree){
-						.id = 4,
+						.id = 3,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
 						.nconstructors = 4294967296,
 						.nnext = 1,
@@ -609,13 +609,13 @@ main(int argc, char **argv)
 							},
 						},
 						.any = &(Dtree){
-							.id = 3,
+							.id = 1,
 							.accept = 1,
 						},
 					},
 				},
 				.any = &(Dtree){
-					.id = 5,
+					.id = 1,
 					.accept =1,
 				},
 			},
@@ -650,7 +650,7 @@ main(int argc, char **argv)
 				NULL,
 			},
 			.dt = &(Dtree){
-				.id = 16,
+				.id = 10,
 				.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 0), NULL), _int32),
 				.nconstructors = 4294967296,
 				.nnext = 3,
@@ -662,7 +662,7 @@ main(int argc, char **argv)
 				},
 				.next = (Dtree*[]){
 					[0] = &(Dtree){
-						.id = 4,
+						.id = 5,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
 						.nconstructors = 4294967296,
 						.nnext = 1,
@@ -672,7 +672,7 @@ main(int argc, char **argv)
 						},
 						.next = (Dtree*[]){
 							[0] = &(Dtree){
-								.id = 2,
+								.id = 4,
 								.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
 								.nconstructors = 4294967296,
 								.nnext = 1,
@@ -687,7 +687,7 @@ main(int argc, char **argv)
 									},
 								},
 								.any = &(Dtree){
-									.id = 1,
+									.id = 3,
 									.accept = 1,
 								},
 							},
@@ -698,7 +698,7 @@ main(int argc, char **argv)
 						},
 					},
 					[1] = &(Dtree){
-						.id = 9,
+						.id = 7,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
 						.nconstructors = 4294967296,
 						.nnext = 1,
@@ -708,7 +708,7 @@ main(int argc, char **argv)
 						},
 						.next = (Dtree*[]){
 							[0] = &(Dtree){
-								.id = 7,
+								.id = 6,
 								.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
 								.nconstructors = 4294967296,
 								.nnext = 1,
@@ -718,23 +718,23 @@ main(int argc, char **argv)
 								},
 								.next = (Dtree*[]){
 									[0] = &(Dtree){
-										.id = 5,
+										.id = 1,
 										.accept = 1,
 									},
 								},
 								.any = &(Dtree){
-									.id = 6,
+									.id = 3,
 									.accept = 1,
 								},
 							},
 						},
 						.any = &(Dtree){
-							.id = 8,
+							.id = 3,
 							.accept = 1,
 						},
 					},
 					[2] = &(Dtree){
-						.id = 14,
+						.id = 9,
 						.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 1), NULL), _int32),
 						.nconstructors = 4294967296,
 						.nnext = 1,
@@ -744,7 +744,7 @@ main(int argc, char **argv)
 						},
 						.next = (Dtree*[]){
 							[0] = &(Dtree){
-								.id = 12,
+								.id = 8,
 								.load = ty(mkexpr(Zloc, Otupget, T, mkintlit(Zloc, 2), NULL), _int32),
 								.nconstructors = 4294967296,
 								.nnext = 1,
@@ -754,24 +754,24 @@ main(int argc, char **argv)
 								},
 								.next = (Dtree*[]){
 									[0] = &(Dtree){
-										.id = 10,
+										.id = 2,
 										.accept = 1,
 									},
 								},
 								.any = &(Dtree){
-									.id = 11,
+									.id = 3,
 									.accept = 1,
 								},
 							},
 						},
 						.any = &(Dtree){
-							.id = 13,
+							.id = 3,
 							.accept = 1,
 						},
 					},
 				},
 				.any = &(Dtree){
-					.id = 15,
+					.id = 3,
 					.accept = 1,
 				},
 			},
@@ -990,7 +990,7 @@ main(int argc, char **argv)
 				NULL,
 			},
 			.dt = &(Dtree){
-				.id = 4,
+				.id = 3,
 				.load = ty(mkexpr(Zloc, Outag, T, NULL), _int32),
 				.nconstructors = 1,
 				.nnext = 1,
@@ -1027,7 +1027,7 @@ main(int argc, char **argv)
 					},
 				},
 				.any = &(Dtree){
-					.id = 3,
+					.id = 1,
 					.accept = 1,
 				},
 			},
@@ -1045,7 +1045,7 @@ main(int argc, char **argv)
 				NULL,
 			},
 			.dt = &(Dtree){
-				.id = 4,
+				.id = 3,
 				.load = ty(mkexpr(Zloc, Outag,
 						  ty(mkexpr(Zloc, Omemb, T, tybase(exprtype(P(0)))->sdecls[0]->decl.name, NULL), _bug001u),
 						  NULL), _int32),
@@ -1078,7 +1078,7 @@ main(int argc, char **argv)
 					},
 				},
 				.any = &(Dtree){
-					.id = 3,
+					.id = 1,
 					.accept = 1,
 				},
 			},
