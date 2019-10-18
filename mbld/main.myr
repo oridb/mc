@@ -15,7 +15,7 @@ use "syssel"
 
 const main = {args : byte[:][:]
 	var b, runsrc, objdir, path, cmd
-	var targname, tags, pid, ok, r
+	var targname, tags, pid, ok
 
 	cmd = std.optparse(args, &[
 		.argdesc = "[inputs...]",
@@ -104,15 +104,15 @@ const main = {args : byte[:][:]
 			ok = bld.buildtarg(b, "all")
 		else
 			match cmd.args[0]
-			| "clean":	r = bld.clean(b)
-			| "install":	r = bld.install(b)
-			| "uninstall":	r = bld.uninstall(b)
-			| "test":	r = bld.test(b, cmd.args[1:])
-			| "bench":	r = bld.bench(b, cmd.args[1:])
-			| "list":	r = show(b, cmd.args[1:])
+			| "clean":	ok = bld.clean(b)
+			| "install":	ok = bld.install(b)
+			| "uninstall":	ok = bld.uninstall(b)
+			| "test":	ok = bld.test(b, cmd.args[1:])
+			| "bench":	ok = bld.bench(b, cmd.args[1:])
+			| "list":	ok = show(b, cmd.args[1:])
 			| _:
 				for target : cmd.args
-					r = ok && bld.buildtarg(b, target)
+					ok = ok && bld.buildtarg(b, target)
 				;;
 			;;
 		;;
