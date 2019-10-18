@@ -54,6 +54,8 @@ struct Dtree {
 	Dtree **next;
 	size_t nnext;
 	Dtree *any;
+
+	size_t refcnt;
 };
 
 /* dataflow analysis */

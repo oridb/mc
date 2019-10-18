@@ -575,6 +575,7 @@ compile(Frontier **frontier, size_t nfrontier)
 		}
 	}
 	if (ncons == 0) {
+		fs->final->refcnt++;
 		return fs->final;
 	}
 
@@ -741,6 +742,10 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 		addcapture(pat[i]->match.block, frontier[i]->cap, frontier[i]->ncap);
 	}
 	root = compile(frontier, nfrontier);
+
+	for (i = 0; i < nfrontier; i++)
+		if (frontier[i]->final->refcnt == 0)
+			fatal(pat[i], "pattern matched by earlier case");
 
 	if (debugopt['M'] || getenv("M"))
 		dtreedump(stdout, root);
