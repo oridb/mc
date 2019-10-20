@@ -25,10 +25,12 @@ static int ndtree;
  * 0 is the root
  * 0,0 and 0,1 are two subtrees of the root.
  *
- * Note: the order of the sequence is reversed with regard to the reference paper.
+ * Note: the order of the sequence is reversed with regard to the reference paper
+ * "When Do Match-Compilation Heuristics Matter" by Kevin Scott and Norman Ramse.
  *
  * Each pattern of a match rule conrresponds to a unique Path of the subject tree.
- * When we have m match rules, for a given Path, there can be at most m patterns associated with the Path.
+ * When we have m match rules, for a given Path, there can be at most m patterns
+ * associated with the Path.
  *
  * Given
  * match v
@@ -531,16 +533,23 @@ project(Node *pat, Path *pi, Node *val, Frontier *fs)
 	return out;
 }
 
-/* compile implements the algorithm outlined in the paper "When Do Match-Compilation Heuristics Matter?" by Kevin Scott and Norman Ramsey
+/* compile implements the algorithm outlined in the paper
+ * "When Do Match-Compilation Heuristics Matter?" by Kevin Scott and Norman Ramsey
  * It generates either a TEST or MATCH (accept=1) dtree, where MATCH is the base case.
  *
  * Summary:
- * 1. if the first Frontier of the input list of Frontiers does not contain any non-wildcard pattern, return a MATCH dtree (accept=1)
- * 2. for each call to the function, it will select a Path from the first match rule in the input Frontiers.
- * 3. scan the input frontiers 'vertically' at the selected Path to form a set of unique constructors. (the list 'cs')
- * 4. for each constructor in 'cs', recursively compile the 'projected' frontiers, which is roughly the frontiers minus the slot at the Path.
- * 5. recursively compile the remaining Frontiers (if any) corresponding to the matches rules with a wildcard at the selected Path.
- * 6. return a new dtree, where the compiled outputs at step 4 form the outgoing edges (dt->next), and the one produced at step 5 serves as the default edage (dt->any)
+ * 1. if the first Frontier of the input list of Frontiers does not contain any
+ *    non-wildcard pattern, return a MATCH dtree (accept=1)
+ * 2. for each call to the function, it will select a Path from
+ *    the first match rule in the input Frontiers.
+ * 3. scan the input frontiers 'vertically' at the selected Path to form a set
+ *    of unique constructors. (the list 'cs')
+ * 4. for each constructor in 'cs', recursively compile the 'projected' frontiers,
+ *    which is roughly the frontiers minus the slot at the Path.
+ * 5. recursively compile the remaining Frontiers (if any) corresponding to the matches
+ *    rules with a wildcard at the selected Path.
+ * 6. return a new dtree, where the compiled outputs at step 4 form the outgoing edges
+ *    (dt->next), and the one produced at step 5 serves as the default edage (dt->any)
  *
  * NOTE:
  * a. how we select the Path at the step 2 is determined by heuristics.
