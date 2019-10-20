@@ -273,7 +273,7 @@ pateq(Node *a, Node *b)
 	case Ovar:
 		return 1;
 	default:
-		assert(0);
+		die("unreachable");
 	}
 }
 
