@@ -787,7 +787,6 @@ main(int argc, char **argv)
 			},
 			.dt = &(Dtree){
 				.id = 2,
-				.nconstructors = 0,
 				.load = ty(mkexpr(Zloc, Omemb, T, tybase(exprtype(P(0)))->sdecls[0]->decl.name, NULL), _int32),
 				.nconstructors = 4294967296,
 				.nnext = 1,
