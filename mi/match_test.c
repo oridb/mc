@@ -283,6 +283,19 @@ typedef struct Test {
 	Dtree *dt;
 } Test;
 
+inline static Node *
+setnode(Node **dst, Node *src)
+{
+	*dst = src;
+	return *dst;
+}
+
+inline static Node *
+getnode(Node *n)
+{
+	return n;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -290,22 +303,16 @@ main(int argc, char **argv)
 	char *err;
 	Node *t, *p_, *p0, *p1, *p2;
 
-#if 0
-#define D() fprintf(stderr, "__%d__\n", __LINE__)
-#else
-#define D()
-#endif
+#define P(x) getnode(p##x)
 
-#define P(x) ({D();p##x;})
-
-#define InitP0(p) ({D();p0 = (p);})
-#define InitP1(p) ({D();p1 = (p);})
-#define InitP2(p) ({D();p2 = (p);})
-#define InitP_(p) ({D();p_ = (p);})
+#define InitP0(p) setnode(&p0, p)
+#define InitP1(p) setnode(&p1, p)
+#define InitP2(p) setnode(&p2, p)
+#define InitP_(p) setnode(&p_, p)
 
 
-#define InitT(v) ({t = (v);})
-#define T ({t;})
+#define InitT(v) setnode(&t, v)
+#define T getnode(t)
 
 
 	Type *_int32 = mktype(Zloc, Tyint32);
