@@ -311,36 +311,36 @@ nconstructors(Type *t)
 
 	t = tybase(t);
 	switch (t->type) {
-	case Tyvoid:return 1;break;
-	case Tybool:return 2;break;
-	case Tychar:return 0x10ffff;break;
+	case Tyvoid:	return 1;
+	case Tybool:	return 2;
+	case Tychar:	return 0x10ffff;
 
-		    /* signed ints */
-	case Tyint8:return 0x100;break;
-	case Tyint16:return 0x10000;break;
-	case Tyint32:return 0x100000000;break;
-	case Tyint:return 0x100000000;break;
-	case Tyint64:return ~0ull;break;
+	/* signed ints */
+	case Tyint8:	return 0x100;
+	case Tyint16:	return 0x10000;
+	case Tyint32:	return 0x100000000;
+	case Tyint:	return 0x100000000;
+	case Tyint64:	return ~0ull;
 
-		     /* unsigned ints */
-	case Tybyte:return 0x100;break;
-	case Tyuint8:return 0x100;break;
-	case Tyuint16:return 0x10000;break;
-	case Tyuint32:return 0x100000000;break;
-	case Tyuint:return 0x100000000;break;
-	case Tyuint64:return ~0ull;break;
+	/* unsigned ints */
+	case Tybyte:	return 0x100;
+	case Tyuint8:	return 0x100;
+	case Tyuint16:	return 0x10000;
+	case Tyuint32:	return 0x100000000;
+	case Tyuint:	return 0x100000000;
+	case Tyuint64:	return ~0ull;
 
-		      /* floats */
-	case Tyflt32:return ~0ull;break;
-	case Tyflt64:return ~0ull;break;
+	/* floats */
+	case Tyflt32:	return ~0ull;
+	case Tyflt64:	return ~0ull;
 
-		     /* complex types */
-	case Typtr:return 1;break;
-	case Tyarray:return 1;break;
-	case Tytuple:return 1;break;
-	case Tystruct:  return 1;
-	case Tyunion:return t->nmemb;break;
-	case Tyslice:return ~0ULL;break;
+	/* complex types */
+	case Typtr:	return 1;
+	case Tyarray:	return 1;
+	case Tytuple:	return 1;
+	case Tystruct:	return 1;
+	case Tyunion:	return t->nmemb;
+	case Tyslice:	return ~0ULL;
 
 	case Tyvar: case Typaram: case Tyunres: case Tyname:
 	case Tybad: case Tyvalist: case Tygeneric: case Ntypes:
