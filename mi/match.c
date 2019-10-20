@@ -845,7 +845,7 @@ genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 
 
 	endlbl = genlbl(m->loc);
-		dt = gendtree(m, val, lbl, nlbl, ndtree);
+	dt = gendtree(m, val, lbl, nlbl, ndtree);
 	genmatchcode(dt, out, nout);
 
 	for (i = 0; i < npat; i++) {
