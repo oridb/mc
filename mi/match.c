@@ -44,8 +44,8 @@ static int ndtree;
  *             13, 23, 33 have the same Path 0,3
  */
 typedef struct Path {
-	unsigned char len;
-	unsigned char *p;
+	size_t len;
+	int *p;
 } Path;
 
 /* Slot bundles a pattern with its corresponding Path and load value.
@@ -226,18 +226,18 @@ dtreedump(FILE *fd, Dtree *dt)
 
 
 static Path*
-newpath(Path *p, char c)
+mkpath(Path *p, int i)
 {
 	Path *newp;
 
 	newp = zalloc(sizeof(Path));
 	if (p) {
-		newp->p = zalloc(p->len+1);
-		memcpy(newp->p, p->p, p->len);
-		newp->p[p->len] = c;
+		newp->p = zalloc(sizeof(newp->p[0])*(p->len+1));
+		memcpy(newp->p, p->p, sizeof(newp->p[0])*p->len);
+		newp->p[p->len] = i;
 		newp->len = p->len+1;
 	} else {
-		newp->p = zalloc(8);
+		newp->p = zalloc(sizeof(int)*4);
 		newp->p[0] = 0;
 		newp->len = 1;
 	}
@@ -248,7 +248,7 @@ newpath(Path *p, char c)
 static int
 patheq(Path *a, Path *b)
 {
-	unsigned char i;
+	size_t i;
 
 	if (a->len != b->len)
 		return 0;
