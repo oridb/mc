@@ -14,7 +14,7 @@ use "util"
 use "syssel"
 
 const main = {args : byte[:][:]
-	var b, runsrc, objdir, path, cmd
+	var b, runsrc, objdir, path, cmd, srcs
 	var targname, tags, pid, ok
 
 	cmd = std.optparse(args, &[
@@ -75,15 +75,23 @@ const main = {args : byte[:][:]
 		std.setenv(e, v)
 	;;
 
+	std.put("cmd.args: {}\n", cmd.args)
 	b = mkbuild(tags)
 	if targname.len != 0
 		if cmd.args.len == 0
 			std.fatal("nothing to compile\n")
 		;;
+
+		if runsrc
+			srcs = cmd.args[0:1]
+		else
+			srcs = cmd.args
+		;;
+
 		bld.opt_objdir = objdir
-		ok = buildimm(b, targname, cmd.args)
+		ok = buildimm(b, targname, srcs)
 		if runsrc && ok
-			pid = runcmd(targname, cmd.args)
+			pid = runcmd(targname, cmd.args[1:])
 			match std.wait(pid)
 			| `std.Wsuccess:	ok = true
 			| _:			ok = false
