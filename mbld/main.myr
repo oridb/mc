@@ -25,7 +25,7 @@ const main = {args : byte[:][:]
 			[.opt='T', .arg="tag", .desc="build with only the specified systag"],
 			[.opt='S', .desc="generate assembly when building"],
 			[.opt='I', .arg="inc", .desc="add 'inc' to your include path"],
-			[.opt='R', .desc="source to compile and run"],
+			[.opt='R', .arg="src", .desc="source to compile and run"],
 			[.opt='B', .arg="base", .desc="install into 'base'"],
 			[.opt='b', .arg="bin", .desc="compile binary 'bin' from inputs"],
 			[.opt='r', .arg="rt", .desc="link against runtime 'rt'"],
@@ -39,6 +39,7 @@ const main = {args : byte[:][:]
 	targname = ""
 	ok = true
 	objdir = ""
+	srcs = cmd.args
 
 	bld.initopts()
 	for opt : cmd.opts
@@ -57,13 +58,14 @@ const main = {args : byte[:][:]
 				std.fatal("at most one -b and -R may be specified\n")
 			;;
 			targname = arg
-		| ('R', arg):
+		| ('R', src):
 			if targname.len != 0
 				std.fatal("at most one -b and -R may be specified\n")
 			;;
 			bld.opt_verbosity = -1
 			runsrc = true
 			targname = std.mktemppath("runmyr")
+			srcs = [src][:]
 		| _:	
 			std.die("unreachable\n")
 		;;
@@ -75,23 +77,16 @@ const main = {args : byte[:][:]
 		std.setenv(e, v)
 	;;
 
-	std.put("cmd.args: {}\n", cmd.args)
 	b = mkbuild(tags)
 	if targname.len != 0
 		if cmd.args.len == 0
 			std.fatal("nothing to compile\n")
 		;;
 
-		if runsrc
-			srcs = cmd.args[0:1]
-		else
-			srcs = cmd.args
-		;;
-
 		bld.opt_objdir = objdir
 		ok = buildimm(b, targname, srcs)
 		if runsrc && ok
-			pid = runcmd(targname, cmd.args[1:])
+			pid = runcmd(targname, cmd.args)
 			match std.wait(pid)
 			| `std.Wsuccess:	ok = true
 			| _:			ok = false
