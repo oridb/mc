@@ -79,7 +79,7 @@ const main = {args : byte[:][:]
 
 	b = mkbuild(tags)
 	if targname.len != 0
-		if cmd.args.len == 0
+		if srcs.len == 0
 			std.fatal("nothing to compile\n")
 		;;
 
