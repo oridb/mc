@@ -275,6 +275,7 @@ pateq(Node *a, Node *b)
 	default:
 		die("unreachable");
 	}
+	return 0;
 }
 
 char *
