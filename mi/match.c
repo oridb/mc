@@ -14,11 +14,12 @@
 #include "parse.h"
 #include "mi.h"
 
-Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid);
+Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl);
 void dtreedump(FILE *fd, Dtree *dt);
 
 
-static int ndtree;
+static size_t ndtree;
+static Dtree **dtree;
 
 /* Path is a integer sequence that labels a subtree of a subject tree.
  * For example,
@@ -178,8 +179,80 @@ mkdtree(Srcloc loc, Node *lbl)
 	t = zalloc(sizeof(Dtree));
 	t->lbl = lbl;
 	t->loc = loc;
-	t->id = ndtree++;
+	t->id = ndtree;
+	lappend(&dtree, &ndtree, t);
 	return t;
+}
+
+static int
+loadeq(Node *a, Node *b)
+{
+	if (a == b)
+		return 1;
+
+	if (exprop(a) != exprop(b))
+		return 0;
+
+	switch (exprop(a)) {
+	case Outag:
+	case Oudata:
+	case Oderef:
+		return loadeq(a->expr.args[0], b->expr.args[0]);
+	case Omemb:
+		return loadeq(a->expr.args[0], b->expr.args[0]) && strcmp(a->expr.args[1]->name.name, b->expr.args[1]->name.name);
+	case Otupget:
+	case Oidx:
+		return loadeq(a->expr.args[0], b->expr.args[0]) && a->expr.args[1]->expr.args[0]->lit.intval == b->expr.args[1]->expr.args[0]->lit.intval;
+	case Ovar:
+		return a == b;
+	default:
+		fatal(a, "unsupported opcode %s of type %s", opstr[exprop(a)], tystr(exprtype(a)));
+	}
+}
+
+static int
+pateq(Node *a, Node *b)
+{
+	if (exprop(a) != exprop(b))
+		return 0;
+
+	switch (exprop(a)) {
+	case Olit:
+		return liteq(a->expr.args[0], b->expr.args[0]);
+	case Ogap:
+	case Ovar:
+		return 1;
+	default:
+		die("unreachable");
+	}
+	return 0;
+}
+
+static int
+dtreusable(Dtree *dt, Node *load, Node **pat, size_t npat, Dtree **next, size_t nnext, Dtree *any)
+{
+	size_t i;
+
+	if (!loadeq(dt->load, load))
+		return 0;
+
+	if (dt->npat != npat)
+		return 0;
+
+	for (i = 0; i < npat; i++) {
+		if (dt->next[i]->id != next[i]->id)
+			return 0;
+		if (!pateq(dt->pat[i], pat[i]))
+			return 0;
+	}
+
+	if (dt->any == NULL && any == NULL)
+		return 1;
+
+	if (dt->any->id != any->id)
+		return 0;
+
+	return 1;
 }
 
 void
@@ -258,24 +331,6 @@ patheq(Path *a, Path *b)
 			return 0;
 	}
 	return 1;
-}
-
-static int
-pateq(Node *a, Node *b)
-{
-	if (exprop(a) != exprop(b))
-		return 0;
-
-	switch (exprop(a)) {
-	case Olit:
-		return liteq(a->expr.args[0], b->expr.args[0]);
-	case Ogap:
-	case Ovar:
-		return 1;
-	default:
-		die("unreachable");
-	}
-	return 0;
 }
 
 char *
@@ -683,7 +738,24 @@ pi_found:
 		any = NULL;
 
 	/* construct the result dtree */
-	out = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
+	out = NULL;
+
+	/* TODO
+	 * use a hash table to avoid the quadratic complexity
+	 * when we have a large N and the bottleneck becomes obvious.
+	 */
+	for (i = 0; i < ndtree; i++) {
+		if (!dtree[i]->accept && dtreusable(dtree[i], slot->load, pat, npat, edge, nedge, any)) {
+			out = dtree[i];
+			out->refcnt++;
+			break;
+		}
+	}
+	if (out == NULL) {
+		out = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
+		out->refcnt++;
+	}
+
 	out->load = slot->load;
 	out->npat = npat,
 	out->pat = pat,
@@ -749,8 +821,49 @@ dtheight(Dtree *dt)
 	return m+1;
 }
 
+static size_t
+refcntsum(Dtree *dt)
+{
+	size_t i;
+	size_t sum;
+
+	if (dt == NULL)
+		return 0;
+
+	dt->emitted = 1;
+
+	/* NOTE
+	 * MATCH nodes are always pre-allocated and shared,
+	 * so counted as 1 for the size measurement.
+	 */
+	if (dt->accept)
+		return 1;
+
+	sum = 0;
+	for (i = 0; i < dt->nnext; i++)
+		if (!dt->next[i]->emitted)
+			sum += refcntsum(dt->next[i]);
+	if (dt->any && !dt->any->emitted)
+		sum += refcntsum(dt->any);
+
+	return dt->refcnt + sum;
+}
+
+static void
+dtresetemitted(Dtree *dt)
+{
+	size_t i;
+
+	if (dt == NULL)
+		return;
+	for (i = 0; i < dt->nnext; i++)
+		dtresetemitted(dt->next[i]);
+	dtresetemitted(dt->any);
+	dt->emitted = 0;
+}
+
 Dtree *
-gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
+gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 {
 	Dtree *root;
 	Node **pat;
@@ -762,7 +875,8 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	char *dbgloc, *dbgfn, *dbgln;
 
 
-	ndtree = startid;
+	ndtree = 0;
+	dtree = NULL;
 
 	pat = m->matchstmt.matches;
 	npat = m->matchstmt.nmatches;
@@ -799,8 +913,11 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	if (getenv("MATCH_STATS")) {
 		csv = fopen("match.csv", "a");
 		assert(csv != NULL);
-		fprintf(csv, "%s@L%d, %d, %ld\n", fname(m->loc), lnum(m->loc), ndtree, dtheight(root));
+		fprintf(csv, "%s@L%d, %ld, %ld, %ld\n", fname(m->loc), lnum(m->loc), refcntsum(root), ndtree, dtheight(root));
 		fclose(csv);
+
+		/* clear 'emitted' so it can be reused by genmatchcode. */
+		dtresetemitted(root);
 	}
 
 	return root;
@@ -887,7 +1004,7 @@ genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 
 
 	endlbl = genlbl(m->loc);
-	dt = gendtree(m, val, lbl, nlbl, 0);
+	dt = gendtree(m, val, lbl, nlbl);
 	genmatchcode(dt, out, nout);
 
 	for (i = 0; i < npat; i++) {
