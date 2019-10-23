@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "util.h"
 #include "parse.h"
@@ -57,6 +58,7 @@ typedef struct Slot {
 	Path *path;
 	Node *pat;
 	Node *load;
+	int score;
 } Slot;
 
 static Slot *
@@ -67,6 +69,7 @@ mkslot(Path *path, Node *pat, Node *val)
 	s->path = path;
 	s->pat = pat;
 	s->load = val;
+	s->score = 0;
 	assert(path != (void *)1);
 	return s;
 }
@@ -408,6 +411,18 @@ nconstructors(Type *t)
 	return 0;
 }
 
+static inline int
+iswildcard(Node *pat)
+{
+	switch (exprop(pat)) {
+	case Ovar:
+	case Ogap:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 /* addrec generates a list of slots for a Frontier by walking a pattern tree.
  * It collects only the terminal patterns like union tags and literals.
  * Non-terminal patterns like tuple/struct/array help encode the path only.
@@ -506,6 +521,100 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 	default:
 		fatal(pat, "unsupported pattern %s of type %s", opstr[exprop(pat)], tystr(exprtype(pat)));
 		break;
+	}
+}
+
+static size_t
+ncons(Frontier **frontier, size_t nfrontier, Path *path)
+{
+	Frontier *fs;
+	Node **cs;
+	Slot *s;
+	size_t ncs, i, j, k;
+
+
+	cs = NULL;
+	ncs = 0;
+	for (i = 0; i < nfrontier; i++) {
+		fs = frontier[i];
+		for (j = 0; j < fs->nslot; j++) {
+			s = fs->slot[j];
+			switch (exprop(s->pat)) {
+			case Ovar:
+			case Ogap:
+				break;
+			case Olit:
+				if (patheq(path, s->path)) {
+					/* NOTE:
+					 * we could use a hash table, but given that the n is usually small,
+					 * an exhaustive search would suffice.
+					 */
+					/* look for a duplicate entry to skip it; we want a unique set of constructors. */
+					for (k = 0; k < ncs; k++) {
+						if (pateq(cs[k], s->pat))
+							break;
+					}
+					if (ncs == 0 || k == ncs)
+						lappend(&cs, &ncs, s->pat);
+				}
+				break;
+			default:
+				assert(0);
+			}
+		}
+	}
+	return ncs;
+}
+
+static void
+score_qb(Frontier **frontier, size_t nfrontier)
+{
+	Frontier *fj, *fk;
+	Slot *s;
+	size_t i, j, k, l;
+	int needed, q, b;
+
+
+	for (j = 0; j < nfrontier; j++) {
+		fj = frontier[j];
+		for (i = 0; i < fj->nslot; i++) {
+			s = fj->slot[i];
+			q = 0;
+			b = 0;
+
+			for (k = 0; k < nfrontier; k++) {
+				fk = frontier[k];
+
+				/* scan for the pattern at the same column */
+				for (l = 0; l < fk->nslot; l++)
+					if (patheq(fk->slot[l]->path, fj->slot[i]->path))
+						break;
+
+				needed = (l != fk->nslot && !iswildcard(fk->slot[l]->pat));
+				if (!needed)
+					break;
+				q++;
+			}
+
+
+			b = ncons(frontier, nfrontier, fj->slot[i]->path);
+			/* we assign the score when the top k rows at the path are all needed */
+			s->score = -10000*s->path->len+1000*q+b;
+		}
+	}
+}
+
+static void
+scoredump(Frontier **frontier, size_t nfrontier)
+{
+	Frontier *fj;
+	size_t i, j;
+
+	for (j = 0; j < nfrontier; j++) {
+		fj = frontier[j];
+		for (i = 0; i < fj->nslot; i++)
+			fprintf(stderr, "%d, ", fj->slot[i]->score);
+		fprintf(stderr, "\n");
 	}
 }
 
@@ -623,6 +732,7 @@ compile(Frontier **frontier, size_t nfrontier)
 	Node **cs, **pat;
 	Slot *slot, *s;
 	size_t ncs, ncons, nrow, nedge, ndefaults, npat;
+	int max;
 
 	assert(nfrontier > 0);
 
@@ -651,19 +761,29 @@ compile(Frontier **frontier, size_t nfrontier)
 	 * we always select the first found constructor, i.e. the top-left one.
 	 */
 
+	max = INT_MIN;
 	slot = NULL;
 	for (i = 0; i < fs->nslot; i++) {
-		switch (exprop(fs->slot[i]->pat)) {
+		/* NOTE:
+		 * scan backward so that slots with equal scores will have left-to-right order
+		 * rationale: left-to-right order is more or less natural/expected
+		 */
+		k = fs->nslot-i-1;
+
+		switch (exprop(fs->slot[k]->pat)) {
 		case Ovar:
 		case Ogap:
 			continue;
 		default:
-			slot = fs->slot[i];
-			goto pi_found;
+			if (fs->slot[k]->score >= max) {
+				slot = fs->slot[k];
+				max = slot->score;
+			}
 		}
 	}
 
-pi_found:
+	assert(slot != NULL);
+
 	/* scan constructors vertically at pi to create the set 'CS' */
 	cs = NULL;
 	ncs = 0;
@@ -889,6 +1009,7 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 	for (i = 0; i < nfrontier; i++) {
 		addcapture(pat[i]->match.block, frontier[i]->cap, frontier[i]->ncap);
 	}
+	score_qb(frontier, nfrontier);
 	root = compile(frontier, nfrontier);
 
 	for (i = 0; i < nfrontier; i++)
@@ -900,8 +1021,10 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 		if (strchr(dbgloc, '@')) {
 			dbgfn = strtok(dbgloc, "@");
 			dbgln = strtok(NULL, "@")+1; /* offset by 1 to skip the charactor 'L' */
-			if (!strcmp(fname(m->loc), dbgfn) && lnum(m->loc) == strtol(dbgln, 0, 0))
+			if (!strcmp(fname(m->loc), dbgfn) && lnum(m->loc) == strtol(dbgln, 0, 0)) {
+				scoredump(frontier, nfrontier);
 				dtreedump(stdout, root);
+			}
 		}
 		else
 			dtreedump(stdout, root);
