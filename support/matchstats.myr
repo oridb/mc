@@ -60,7 +60,7 @@ const maximum = {xs
 }
 
 const main = {args : byte[:][:]
-	var f, locs, sizes, heights, count
+	var f, locs, refcnts, sizes, heights, count
 
 	if args.len < 2
 		std.put("need input file\n")
@@ -73,6 +73,7 @@ const main = {args : byte[:][:]
 	;;
 
 	locs = [][:]
+	refcnts = [][:]
 	sizes = [][:]
 	heights = [][:]
 	count = 0
@@ -82,6 +83,11 @@ const main = {args : byte[:][:]
 		| `std.Ok loc: std.slpush(&locs, std.strstrip(loc))
 		| `std.Err `bio.Eof: break
 		| `std.Err e: std.fatal("error read loc: {}\n", e)
+		;;
+
+		match bio.readto(f, ",")
+		| `std.Ok refcnt: std.slpush(&refcnts, atoi(std.strstrip(refcnt)))
+		| `std.Err e: std.fatal("error read refcnt: {}\n", e)
 		;;
 
 		match bio.readto(f, ",")
@@ -97,6 +103,7 @@ const main = {args : byte[:][:]
 	;;
 
 	std.put("Sample count: {}\n", count)
+	std.put("Dtree Refcnt\tavg: {s=3}\t95th percentile: {s=3}\t maximum: {}\n", avg(refcnts), percentile(95, refcnts), maximum(refcnts))
 	std.put("Dtree Size\tavg: {s=3}\t95th percentile: {s=3}\t maximum: {}\n", avg(sizes), percentile(95, sizes), maximum(sizes))
 	std.put("Dtree Height\tavg: {s=3}\t95th percentile: {s=3}\t maximum: {}\n", avg(heights), percentile(95, heights), maximum(heights))
 

@@ -9,16 +9,18 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "util.h"
 #include "parse.h"
 #include "mi.h"
 
-Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid);
+Dtree *gendtree(Node *m, Node *val, Node **lbl, size_t nlbl);
 void dtreedump(FILE *fd, Dtree *dt);
 
 
-static int ndtree;
+static size_t ndtree;
+static Dtree **dtree;
 
 /* Path is a integer sequence that labels a subtree of a subject tree.
  * For example,
@@ -56,6 +58,7 @@ typedef struct Slot {
 	Path *path;
 	Node *pat;
 	Node *load;
+	int score;
 } Slot;
 
 static Slot *
@@ -66,6 +69,7 @@ mkslot(Path *path, Node *pat, Node *val)
 	s->path = path;
 	s->pat = pat;
 	s->load = val;
+	s->score = 0;
 	assert(path != (void *)1);
 	return s;
 }
@@ -178,8 +182,80 @@ mkdtree(Srcloc loc, Node *lbl)
 	t = zalloc(sizeof(Dtree));
 	t->lbl = lbl;
 	t->loc = loc;
-	t->id = ndtree++;
+	t->id = ndtree;
+	lappend(&dtree, &ndtree, t);
 	return t;
+}
+
+static int
+loadeq(Node *a, Node *b)
+{
+	if (a == b)
+		return 1;
+
+	if (exprop(a) != exprop(b))
+		return 0;
+
+	switch (exprop(a)) {
+	case Outag:
+	case Oudata:
+	case Oderef:
+		return loadeq(a->expr.args[0], b->expr.args[0]);
+	case Omemb:
+		return loadeq(a->expr.args[0], b->expr.args[0]) && strcmp(a->expr.args[1]->name.name, b->expr.args[1]->name.name);
+	case Otupget:
+	case Oidx:
+		return loadeq(a->expr.args[0], b->expr.args[0]) && a->expr.args[1]->expr.args[0]->lit.intval == b->expr.args[1]->expr.args[0]->lit.intval;
+	case Ovar:
+		return a == b;
+	default:
+		fatal(a, "unsupported opcode %s of type %s", opstr[exprop(a)], tystr(exprtype(a)));
+	}
+}
+
+static int
+pateq(Node *a, Node *b)
+{
+	if (exprop(a) != exprop(b))
+		return 0;
+
+	switch (exprop(a)) {
+	case Olit:
+		return liteq(a->expr.args[0], b->expr.args[0]);
+	case Ogap:
+	case Ovar:
+		return 1;
+	default:
+		die("unreachable");
+	}
+	return 0;
+}
+
+static int
+dtreusable(Dtree *dt, Node *load, Node **pat, size_t npat, Dtree **next, size_t nnext, Dtree *any)
+{
+	size_t i;
+
+	if (!loadeq(dt->load, load))
+		return 0;
+
+	if (dt->npat != npat)
+		return 0;
+
+	for (i = 0; i < npat; i++) {
+		if (dt->next[i]->id != next[i]->id)
+			return 0;
+		if (!pateq(dt->pat[i], pat[i]))
+			return 0;
+	}
+
+	if (dt->any == NULL && any == NULL)
+		return 1;
+
+	if (dt->any->id != any->id)
+		return 0;
+
+	return 1;
 }
 
 void
@@ -260,24 +336,6 @@ patheq(Path *a, Path *b)
 	return 1;
 }
 
-static int
-pateq(Node *a, Node *b)
-{
-	if (exprop(a) != exprop(b))
-		return 0;
-
-	switch (exprop(a)) {
-	case Olit:
-		return liteq(a->expr.args[0], b->expr.args[0]);
-	case Ogap:
-	case Ovar:
-		return 1;
-	default:
-		die("unreachable");
-	}
-	return 0;
-}
-
 char *
 pathfmt(Path *p)
 {
@@ -351,6 +409,18 @@ nconstructors(Type *t)
 
 	}
 	return 0;
+}
+
+static inline int
+iswildcard(Node *pat)
+{
+	switch (exprop(pat)) {
+	case Ovar:
+	case Ogap:
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 /* addrec generates a list of slots for a Frontier by walking a pattern tree.
@@ -451,6 +521,100 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 	default:
 		fatal(pat, "unsupported pattern %s of type %s", opstr[exprop(pat)], tystr(exprtype(pat)));
 		break;
+	}
+}
+
+static size_t
+ncons(Frontier **frontier, size_t nfrontier, Path *path)
+{
+	Frontier *fs;
+	Node **cs;
+	Slot *s;
+	size_t ncs, i, j, k;
+
+
+	cs = NULL;
+	ncs = 0;
+	for (i = 0; i < nfrontier; i++) {
+		fs = frontier[i];
+		for (j = 0; j < fs->nslot; j++) {
+			s = fs->slot[j];
+			switch (exprop(s->pat)) {
+			case Ovar:
+			case Ogap:
+				break;
+			case Olit:
+				if (patheq(path, s->path)) {
+					/* NOTE:
+					 * we could use a hash table, but given that the n is usually small,
+					 * an exhaustive search would suffice.
+					 */
+					/* look for a duplicate entry to skip it; we want a unique set of constructors. */
+					for (k = 0; k < ncs; k++) {
+						if (pateq(cs[k], s->pat))
+							break;
+					}
+					if (ncs == 0 || k == ncs)
+						lappend(&cs, &ncs, s->pat);
+				}
+				break;
+			default:
+				assert(0);
+			}
+		}
+	}
+	return ncs;
+}
+
+static void
+score_qb(Frontier **frontier, size_t nfrontier)
+{
+	Frontier *fj, *fk;
+	Slot *s;
+	size_t i, j, k, l;
+	int needed, q, b;
+
+
+	for (j = 0; j < nfrontier; j++) {
+		fj = frontier[j];
+		for (i = 0; i < fj->nslot; i++) {
+			s = fj->slot[i];
+			q = 0;
+			b = 0;
+
+			for (k = 0; k < nfrontier; k++) {
+				fk = frontier[k];
+
+				/* scan for the pattern at the same column */
+				for (l = 0; l < fk->nslot; l++)
+					if (patheq(fk->slot[l]->path, fj->slot[i]->path))
+						break;
+
+				needed = (l != fk->nslot && !iswildcard(fk->slot[l]->pat));
+				if (!needed)
+					break;
+				q++;
+			}
+
+
+			b = ncons(frontier, nfrontier, fj->slot[i]->path);
+			/* we assign the score when the top k rows at the path are all needed */
+			s->score = -10000*s->path->len+1000*q+b;
+		}
+	}
+}
+
+static void
+scoredump(Frontier **frontier, size_t nfrontier)
+{
+	Frontier *fj;
+	size_t i, j;
+
+	for (j = 0; j < nfrontier; j++) {
+		fj = frontier[j];
+		for (i = 0; i < fj->nslot; i++)
+			fprintf(stderr, "%d, ", fj->slot[i]->score);
+		fprintf(stderr, "\n");
 	}
 }
 
@@ -568,6 +732,7 @@ compile(Frontier **frontier, size_t nfrontier)
 	Node **cs, **pat;
 	Slot *slot, *s;
 	size_t ncs, ncons, nrow, nedge, ndefaults, npat;
+	int max;
 
 	assert(nfrontier > 0);
 
@@ -596,19 +761,29 @@ compile(Frontier **frontier, size_t nfrontier)
 	 * we always select the first found constructor, i.e. the top-left one.
 	 */
 
+	max = INT_MIN;
 	slot = NULL;
 	for (i = 0; i < fs->nslot; i++) {
-		switch (exprop(fs->slot[i]->pat)) {
+		/* NOTE:
+		 * scan backward so that slots with equal scores will have left-to-right order
+		 * rationale: left-to-right order is more or less natural/expected
+		 */
+		k = fs->nslot-i-1;
+
+		switch (exprop(fs->slot[k]->pat)) {
 		case Ovar:
 		case Ogap:
 			continue;
 		default:
-			slot = fs->slot[i];
-			goto pi_found;
+			if (fs->slot[k]->score >= max) {
+				slot = fs->slot[k];
+				max = slot->score;
+			}
 		}
 	}
 
-pi_found:
+	assert(slot != NULL);
+
 	/* scan constructors vertically at pi to create the set 'CS' */
 	cs = NULL;
 	ncs = 0;
@@ -683,7 +858,24 @@ pi_found:
 		any = NULL;
 
 	/* construct the result dtree */
-	out = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
+	out = NULL;
+
+	/* TODO
+	 * use a hash table to avoid the quadratic complexity
+	 * when we have a large N and the bottleneck becomes obvious.
+	 */
+	for (i = 0; i < ndtree; i++) {
+		if (!dtree[i]->accept && dtreusable(dtree[i], slot->load, pat, npat, edge, nedge, any)) {
+			out = dtree[i];
+			out->refcnt++;
+			break;
+		}
+	}
+	if (out == NULL) {
+		out = mkdtree(slot->pat->loc, genlbl(slot->pat->loc));
+		out->refcnt++;
+	}
+
 	out->load = slot->load;
 	out->npat = npat,
 	out->pat = pat,
@@ -749,8 +941,49 @@ dtheight(Dtree *dt)
 	return m+1;
 }
 
+static size_t
+refcntsum(Dtree *dt)
+{
+	size_t i;
+	size_t sum;
+
+	if (dt == NULL)
+		return 0;
+
+	dt->emitted = 1;
+
+	/* NOTE
+	 * MATCH nodes are always pre-allocated and shared,
+	 * so counted as 1 for the size measurement.
+	 */
+	if (dt->accept)
+		return 1;
+
+	sum = 0;
+	for (i = 0; i < dt->nnext; i++)
+		if (!dt->next[i]->emitted)
+			sum += refcntsum(dt->next[i]);
+	if (dt->any && !dt->any->emitted)
+		sum += refcntsum(dt->any);
+
+	return dt->refcnt + sum;
+}
+
+static void
+dtresetemitted(Dtree *dt)
+{
+	size_t i;
+
+	if (dt == NULL)
+		return;
+	for (i = 0; i < dt->nnext; i++)
+		dtresetemitted(dt->next[i]);
+	dtresetemitted(dt->any);
+	dt->emitted = 0;
+}
+
 Dtree *
-gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
+gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 {
 	Dtree *root;
 	Node **pat;
@@ -762,7 +995,8 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	char *dbgloc, *dbgfn, *dbgln;
 
 
-	ndtree = startid;
+	ndtree = 0;
+	dtree = NULL;
 
 	pat = m->matchstmt.matches;
 	npat = m->matchstmt.nmatches;
@@ -775,6 +1009,7 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	for (i = 0; i < nfrontier; i++) {
 		addcapture(pat[i]->match.block, frontier[i]->cap, frontier[i]->ncap);
 	}
+	score_qb(frontier, nfrontier);
 	root = compile(frontier, nfrontier);
 
 	for (i = 0; i < nfrontier; i++)
@@ -786,8 +1021,10 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 		if (strchr(dbgloc, '@')) {
 			dbgfn = strtok(dbgloc, "@");
 			dbgln = strtok(NULL, "@")+1; /* offset by 1 to skip the charactor 'L' */
-			if (!strcmp(fname(m->loc), dbgfn) && lnum(m->loc) == strtol(dbgln, 0, 0))
+			if (!strcmp(fname(m->loc), dbgfn) && lnum(m->loc) == strtol(dbgln, 0, 0)) {
+				scoredump(frontier, nfrontier);
 				dtreedump(stdout, root);
+			}
 		}
 		else
 			dtreedump(stdout, root);
@@ -799,8 +1036,11 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl, int startid)
 	if (getenv("MATCH_STATS")) {
 		csv = fopen("match.csv", "a");
 		assert(csv != NULL);
-		fprintf(csv, "%s@L%d, %d, %ld\n", fname(m->loc), lnum(m->loc), ndtree, dtheight(root));
+		fprintf(csv, "%s@L%d, %ld, %ld, %ld\n", fname(m->loc), lnum(m->loc), refcntsum(root), ndtree, dtheight(root));
 		fclose(csv);
+
+		/* clear 'emitted' so it can be reused by genmatchcode. */
+		dtresetemitted(root);
 	}
 
 	return root;
@@ -887,7 +1127,7 @@ genmatch(Node *m, Node *val, Node ***out, size_t *nout)
 
 
 	endlbl = genlbl(m->loc);
-	dt = gendtree(m, val, lbl, nlbl, 0);
+	dt = gendtree(m, val, lbl, nlbl);
 	genmatchcode(dt, out, nout);
 
 	for (i = 0; i < npat; i++) {
