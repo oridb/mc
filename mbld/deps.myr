@@ -471,11 +471,13 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	;;
 
 	/* OSX warns if we don't add a version */
+        /* OSX now hates this, and the breaks everything */
+        /*
 	if std.eq(opt_sys, "osx")
 		std.slpush(&n.cmd, std.sldup("-macosx_version_min"))
 		std.slpush(&n.cmd, std.sldup("10.6"))
 	;;
-
+        */
 }
 
 const myrcmd = {b, n, mt, src, istest
