@@ -1,5 +1,14 @@
 use std
 
+use testr
+
+const main = {
+	testr.run([
+		[.name="builtins",  .fn=builtins ],
+		[.name="installed", .fn=installed],
+	][:])
+}
+
 type blah
 type blah = struct
 	a : byte[:]
@@ -15,14 +24,14 @@ type pair = struct
 	y : int32
 ;;
 
-const check = {expected, fmt, args : ...
+const check = {c, expected, fmt, args : ...
 	var buf : byte[2048]
 	var sl, ap
 
 	ap = std.vastart(&args)
 	sl = std.bfmtv(buf[:], fmt, &ap)
 	if !std.eq(expected, sl)
-		std.fatal("mismatched fmt: got \"{}\", expected \"{}\"\n", sl, expected)
+		testr.fail(c, "mismatched fmt: got \"{}\", expected \"{}\"\n", sl, expected)
 	;;
 }
 
@@ -31,87 +40,82 @@ type aligncheck = union
 	`Bar int64
 ;;
 
-const main = {
-	builtins()
-	installed()
-}
-
-const builtins = {
+const builtins = {c
 	var s : blah
 	var m : u
 	var v = [void, void][:]
 
 	/* basic types */
-	check("      abcd", "{w=10}", "abcd")
-	check("00000bdcae", "{p=0,w=10}", "bdcae")
-	check("abcdefghijkl", "{p=0,w=10}", "abcdefghijkl")
-	check("a", "{w=0,p=1}", "a")
-	check("        10", "{w=10}", 10)
-	check("0000000010", "{p=0,w=10}", 10)
-	check("4294967295", "{p=0,w=10}", (-1 : uint))
-	check("-000000001", "{p=0,w=10}", -1)
-	check("xxxxxxxx-1", "{p=x,w=10}", -1)
-	check("        -1", "{w=10}", -1)
-	check("100000"    , "{w=3}", 100000)
-	check("foobarbaz", "{}bar{}", "foo", "baz")
-	check("\\n\\r\\xff", "{e}", "\n\r\xff")
-	check("{}barbaz", "{{}}bar{}", "baz")
-	check("{barbaz}", "{{bar{}}}", "baz")
-	check("      Tlön", "{w=10}", "Tlön")
-	check("     háček", "{w=10}", "háček")
-	check("_____即是多多即", "{w=15,p=_}", "即是多多即")
-	check("   τῶν ῾Ελλήνων", "{w=15}", "τῶν ῾Ελλήνων")
-	check("abcd", "{}", "abcd")
-	check("123", "{}", 123)
-	check("7b", "{x}", 123)
-	check("0x7b", "0x{x}", 123)
-	check("0.0", "{}", 0.0)
-	check("-0.0", "{}", -0.0)
-	check("0.3", "{}", 0.3)
-	check("0.3", "{}", (0.3 : flt32))
-	check("1.0", "{}", 1.0)
-	check("100.0", "{}", 100.0)
-	check("666.91972", "{}", 666.91972)
-	check("1.0001", "{}", 1.0001)
-	check("0.000101323461002", "{}", 0.000101323461002)
-	check("(1, `Bar 123, `Foo)", "{}", (1, `Bar 123, `Foo))
+	check(c, "      abcd", "{w=10}", "abcd")
+	check(c, "00000bdcae", "{p=0,w=10}", "bdcae")
+	check(c, "abcdefghijkl", "{p=0,w=10}", "abcdefghijkl")
+	check(c, "a", "{w=0,p=1}", "a")
+	check(c, "        10", "{w=10}", 10)
+	check(c, "0000000010", "{p=0,w=10}", 10)
+	check(c, "4294967295", "{p=0,w=10}", (-1 : uint))
+	check(c, "-000000001", "{p=0,w=10}", -1)
+	check(c, "xxxxxxxx-1", "{p=x,w=10}", -1)
+	check(c, "        -1", "{w=10}", -1)
+	check(c, "100000"    , "{w=3}", 100000)
+	check(c, "foobarbaz", "{}bar{}", "foo", "baz")
+	check(c, "\\n\\r\\xff", "{e}", "\n\r\xff")
+	check(c, "{}barbaz", "{{}}bar{}", "baz")
+	check(c, "{barbaz}", "{{bar{}}}", "baz")
+	check(c, "      Tlön", "{w=10}", "Tlön")
+	check(c, "     háček", "{w=10}", "háček")
+	check(c, "_____即是多多即", "{w=15,p=_}", "即是多多即")
+	check(c, "   τῶν ῾Ελλήνων", "{w=15}", "τῶν ῾Ελλήνων")
+	check(c, "abcd", "{}", "abcd")
+	check(c, "123", "{}", 123)
+	check(c, "7b", "{x}", 123)
+	check(c, "0x7b", "0x{x}", 123)
+	check(c, "0.0", "{}", 0.0)
+	check(c, "-0.0", "{}", -0.0)
+	check(c, "0.3", "{}", 0.3)
+	check(c, "0.3", "{}", (0.3 : flt32))
+	check(c, "1.0", "{}", 1.0)
+	check(c, "100.0", "{}", 100.0)
+	check(c, "666.91972", "{}", 666.91972)
+	check(c, "1.0001", "{}", 1.0001)
+	check(c, "0.000101323461002", "{}", 0.000101323461002)
+	check(c, "(1, `Bar 123, `Foo)", "{}", (1, `Bar 123, `Foo))
 
 	/* tricky cases: min values for integers */
-	check("-128", "{}", (-128 : int8))
-	check("-32768", "{}", (-32768 : int16))
-	check("-2147483648", "{}", (-2147483648 : int32))
-	check("-9223372036854775808", "{}", -9223372036854775808l)
+	check(c, "-128", "{}", (-128 : int8))
+	check(c, "-32768", "{}", (-32768 : int16))
+	check(c, "-2147483648", "{}", (-2147483648 : int32))
+	check(c, "-9223372036854775808", "{}", -9223372036854775808l)
 
 	/* 
 	compound types, followed by single value to make
 	sure we consume the right byte count.
 	*/
-	check("(1, 2) true", "{} {}", (1, 2), true)
-	check("(1,) true", "{} {}", (1,), true)
+	check(c, "(1, 2) true", "{} {}", (1, 2), true)
+	check(c, "(1,) true", "{} {}", (1,), true)
 
 	s = [.a="foo true", .b=123]
-	/*check("[.a=foo, .b=123] true", "{} {}", s, true) BUSTED */
+	/*check(c, "[.a=foo, .b=123] true", "{} {}", s, true) BUSTED */
 
 	m = `First
-	check("`First true", "{} {}", m, true)
+	check(c, "`First true", "{} {}", m, true)
 	m = `Second 123
-	check("`Second 123 true", "{} {}", m, true)
+	check(c, "`Second 123 true", "{} {}", m, true)
 	m = `Third "foo"
-	check("`Third foo true", "{} {}", m, true)
+	check(c, "`Third foo true", "{} {}", m, true)
 
-	check("[1, 2, 3] true", "{} {}", [1,2,3], true)
-	check("[1, 2, 3] true", "{} {}", [1,2,3][:], true)
-	check("1:2:3 true", "{j=:} {}", [1,2,3][:], true)
-	check("1,2,3 true", "{j=\\,} {}", [1,2,3][:], true)
-	check("1}2}3 true", "{j=\\}} {}", [1,2,3][:], true)
-	check("1... 2... 3 true", "{j=... } {}", [1,2,3][:], true)
+	check(c, "[1, 2, 3] true", "{} {}", [1,2,3], true)
+	check(c, "[1, 2, 3] true", "{} {}", [1,2,3][:], true)
+	check(c, "1:2:3 true", "{j=:} {}", [1,2,3][:], true)
+	check(c, "1,2,3 true", "{j=\\,} {}", [1,2,3][:], true)
+	check(c, "1}2}3 true", "{j=\\}} {}", [1,2,3][:], true)
+	check(c, "1... 2... 3 true", "{j=... } {}", [1,2,3][:], true)
 
-	check("[]", "{}", v[:0])
-	check("[void]", "{}", v[:1])
-	check("[void, void]", "{}", v[:2])
+	check(c, "[]", "{}", v[:0])
+	check(c, "[void]", "{}", v[:1])
+	check(c, "[void, void]", "{}", v[:2])
 }
 
-const installed = {
+const installed = {c
 	var x : int
 	var p : pair
 
@@ -121,32 +125,32 @@ const installed = {
 	std.fmtinstall(std.typeof(p), pairfmt)
 
 	/* single value */
-	check("formatted an int: 0", "{}", 0)
-	check("formatted an int: -10", "{}", -10)
+	check(c, "formatted an int: 0", "{}", 0)
+	check(c, "formatted an int: -10", "{}", -10)
 
 	/* multiple values */
-	check("formatted an int: 0, formatted an int: 10", "{}, {}", 0, 10)
-	check("formatted an int: -10, formatted an int: 20", "{}, {}", -10, 20)
+	check(c, "formatted an int: 0, formatted an int: 10", "{}, {}", 0, 10)
+	check(c, "formatted an int: -10, formatted an int: 20", "{}, {}", -10, 20)
 
 	/* single value, no options */
 	p = [.x=0, .y=0]
-	check("formatted a pair: [0, 0]", "{}", p)
+	check(c, "formatted a pair: [0, 0]", "{}", p)
 	/* single value, option combos */
 	p = [.x=-10, .y=-10]
-	check("formatted a pair: [-10, -10]", "{}", p)
-	check("formatted a pair: [-10, -10] x=foo", "{x=foo}", p)
-	check("formatted a pair: [-10, -10] y present", "{y}", p)
-	check("formatted a pair: [-10, -10] x=bar y present", "{x=bar,y}", p)
-	check("formatted a pair: [-10, -10] x=bar y present", "{x=bar,y}", p)
+	check(c, "formatted a pair: [-10, -10]", "{}", p)
+	check(c, "formatted a pair: [-10, -10] x=foo", "{x=foo}", p)
+	check(c, "formatted a pair: [-10, -10] y present", "{y}", p)
+	check(c, "formatted a pair: [-10, -10] x=bar y present", "{x=bar,y}", p)
+	check(c, "formatted a pair: [-10, -10] x=bar y present", "{x=bar,y}", p)
 
 	/* multiple values */
-	check("formatted a pair: [-10, -10], formatted a pair: [-10, -10]", "{}, {}", p, p)
+	check(c, "formatted a pair: [-10, -10], formatted a pair: [-10, -10]", "{}, {}", p, p)
 	/* multiple values of different types */
-	check("11, formatted a pair: [-10, -10], formatted an int: 111", "{}, {}, {}", (11 : byte), p, 111)
+	check(c, "11, formatted a pair: [-10, -10], formatted an int: 111", "{}, {}, {}", (11 : byte), p, 111)
 
 	/* in aggregates */
-	check("[formatted a pair: [-10, -10]]", "{}", [p])
-	check("[formatted a pair: [-10, -10]]", "{}", [p][:])
+	check(c, "[formatted a pair: [-10, -10]]", "{}", [p])
+	check(c, "[formatted a pair: [-10, -10]]", "{}", [p][:])
 
 }
 

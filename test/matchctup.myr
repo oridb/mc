@@ -1,0 +1,32 @@
+use std
+
+const main = {
+	match (gen_a(), gen_b())
+	| (`std.Err _, _): std.put("error case 1")
+	| (_, `std.Err _): std.put("error case 2")
+	| (`std.Ok L, `std.Ok N):
+		std.put("l = {} n = {}\n", L, N)
+	;;
+}
+
+var gen_a : (-> std.result(byte[:][:], void)) = {
+	var ret = [][:]
+
+	for var j = 0; j < 4; ++j
+		std.slpush(&ret, std.fmt("{}", j))
+	;;
+
+	if 1 + 1 > 3
+		-> `std.Err void
+	;;
+
+	-> `std.Ok ret
+}
+
+var gen_b : (-> std.result(int, void)) = {
+	if 1 + 1 > 3
+		-> `std.Err void
+	;;
+
+	-> `std.Ok 5
+}
