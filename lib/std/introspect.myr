@@ -189,6 +189,7 @@ const ncnext = {tc
 	(n, sz) = getipacked(tc.rem)
 	enc = tc.rem[sz:sz+n]
 	tc.rem = tc.rem[sz+n:]
+	tc.nelt--
 	-> (name, enc)
 }
 

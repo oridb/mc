@@ -165,11 +165,9 @@ const sbfmt = {sb, fmt, args
 const sbfmtv = {sb, fmt, ap -> size
 	var buf : byte[256], param : (byte[:], byte[:])[8]
 	var state, startp, endp, starta, nbuf
-	var nfmt, nvarargs, nparam
+	var nparam
 	var b, i
 
-	nvarargs = ap.tc.nelt
-	nfmt = 0
 	startp = 0
 	starta = 0
 	nparam = 0
@@ -216,8 +214,7 @@ const sbfmtv = {sb, fmt, ap -> size
 			if startp != nbuf
 				param[nparam++] = (buf[startp:nbuf], "")
 			;;
-			nfmt++
-			if nfmt > nvarargs
+			if ap.tc.nelt < 1
 				die("too few values for fmt\n")
 			;;
 			fmtval(sb, vatype(ap), ap, param[:nparam])
@@ -237,15 +234,17 @@ const sbfmtv = {sb, fmt, ap -> size
 			if startp != nbuf
 				param[nparam++] = (buf[startp:endp], buf[starta:nbuf])
 			;;
+			if ap.tc.nelt < 1
+				die("too few values for fmt\n")
+			;;
 			fmtval(sb, vatype(ap), ap, param[:nparam])
-			nfmt++
 		| (`ParamArg, '\\'):
 			buf[nbuf++] = fmt[i++]
 		| (`ParamArg, chr):
 			buf[nbuf++] = b
 		;;
 	;;
-	if nfmt != nvarargs
+	if ap.tc.nelt != 0
 		die("too many values for fmt\n")
 	;;
 	-> sb.len
@@ -367,26 +366,26 @@ const fallbackfmt = {sb, params, tyenc, ap : valist# -> void
 	| `Tytuple tc:
 		subap = vaenter(ap)
 		sbfmt(sb, "(")
-		for var i = 0; i < subap.tc.nelt; i++
+		var extracomma = subap.tc.nelt == 1
+		while subap.tc.nelt != 0
 			fmtval(sb, vatype(&subap), &subap, [][:])
-			if subap.tc.nelt == 1
-				sbfmt(sb, ",")
-			elif i != subap.tc.nelt -1
+			if subap.tc.nelt > 0
 				sbfmt(sb, ", ")
 			;;
+		;;
+		if extracomma
+			sbfmt(sb, ",")
 		;;
 		sbfmt(sb, ")")
 		vabytes(ap)
 	| `Tystruct nc:
 		subap = vaenter(ap)
 		sbfmt(sb, "[")
-		for var i = 0; i < subap.tc.nelt; i++
+		while subap.tc.nelt != 0
 			(subname, subenc) = ncpeek(&subap.tc)
 			sbfmt(sb, ".{}=", subname)
 			fmtval(sb, vatype(&subap), &subap, [][:])
-			if subap.tc.nelt == 1
-				sbfmt(sb, ",")
-			elif i != subap.tc.nelt -1
+			if subap.tc.nelt > 0
 				sbfmt(sb, ", ")
 			;;
 		;;
