@@ -4,8 +4,11 @@ use testr
 
 const main = {
 	testr.run([
-		[.name="builtins",  .fn=builtins ],
-		[.name="installed", .fn=installed],
+		[.name="builtins",       .fn=builtins ],
+		[.name="variable-width", .fn=variablewidth ],
+
+		/* Must come last -- clobbers builtins */
+		[.name="installed",      .fn=installed],
 	][:])
 }
 
@@ -113,6 +116,47 @@ const builtins = {c
 	check(c, "[]", "{}", v[:0])
 	check(c, "[void]", "{}", v[:1])
 	check(c, "[void, void]", "{}", v[:2])
+}
+
+const variablewidth = {c
+	check(c, "....xyz", "{p=.,w=7}", "xyz")
+	check(c, "....xyz", "{w=7,p=.}", "xyz")
+	check(c, "....xyz", "{p=.,w=?}", "xyz", 7)
+	check(c, "....xyz", "{w=?,p=.}", "xyz", 7)
+	check(c, "=====xyz", "{p==,w=?}", "xyz", 8)
+	check(c, "=====xyz", "{w=?,p==}", "xyz", 8)
+	check(c, "=====xyz", "{p==,w=?}", "xyz", (8 : uint8))
+	check(c, "=====xyz", "{w=?,p==}", "xyz", (8 : uint8))
+	check(c, "=====xyz", "{p==,w=?}", "xyz", (8 : std.size))
+	check(c, "=====xyz", "{w=?,p==}", "xyz", (8 : std.size))
+	check(c, "=====xyz", "{p==,w=?}", "xyz", (8 : uint64))
+	check(c, "=====xyz", "{w=?,p==}", "xyz", (8 : uint64))
+	check(c, "=====xyz", "{p==,w=?}", "xyz", (8 : int16))
+	check(c, "=====xyz", "{w=?,p==}", "xyz", (8 : int16))
+	check(c, "xyz", "{w=?,p==}", "xyz", (-34 : int16))
+
+	check(c, "     1", "{w=?}", 1, 6)
+	check(c, "77", "{w=?}", 77, (-1 : int8))
+	check(c, "77", "{w=?}", 77, (-1 : int16))
+	check(c, "77", "{w=?}", 77, (-1 : int32))
+	check(c, "77", "{w=?}", 77, (-4294967294 : int32))
+	check(c, "77", "{w=?}", 77, (-1 : int64))
+	check(c, "77", "{w=?}", 77, (-18446744073709551614 : int64))
+	check(c, "77", "{w=?}", 77, (0 : int8))
+	check(c, "77", "{w=?}", 77, (0 : int16))
+	check(c, "77", "{w=?}", 77, (0 : int32))
+	check(c, "77", "{w=?}", 77, (0 : int64))
+	check(c, "______________________________77", "{p=_,w=?}", 77, (32 : int8))
+
+	check(c, "1.0", "{w=?,p=X}", 1.0, (0 : int16))
+	check(c, "1.0", "{w=?,p=X}", 1.0, (1 : int16))
+	check(c, "1.0", "{w=?,p=X}", 1.0, (2 : int16))
+	check(c, "1.0", "{w=?,p=X}", 1.0, (3 : int16))
+	check(c, "X1.0", "{w=?,p=X}", 1.0, (4 : int16))
+	check(c, "XXXXX1.0", "{w=?,p=X}", (1.0 : flt32), (8 : int16))
+	check(c, "XXXXX1.0", "{w=?,p=X}", (1.0 : flt64), (8 : int16))
+
+	check(c, "XXab cd YYde ZZZZ1.0", "{w=4,p=X} {w=?,p=0} {p=Y,w=?} {w=?,p=Z}", "ab", "cd", (-99 : std.size), "de", (4 : uint64), (1.0 : flt32), (7 : std.size))
 }
 
 const installed = {c
