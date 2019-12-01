@@ -593,6 +593,10 @@ const getint = {s, msg
 }
 
 const pullint = {ap, msg
+	if ap.tc.nelt < 1
+		die("expected argument where none was provided")
+	;;
+
 	match typedesc(vatype(ap))
 	| `Tyint8:
 		var val : int8 = vanext(ap)
