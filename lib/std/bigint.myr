@@ -601,10 +601,12 @@ const kmul = {r, a, b
 	z1 = bigdup(&x0)
 	trim(z1)
 	bigsub(z1, &x1)
+	var z1sign = z1.sign
 	t0 = bigdup(&y1)
 	bigsub(t0, &y0)
 
 	umul(z1, t0)
+	z1.sign = z1sign * t0.sign
 	bigadd(z1, z0)
 	bigadd(z1, z2)
 
@@ -643,6 +645,7 @@ const smallmul = {a, b
 	;;
 	slfree(a.dig)
 	a.dig = w
+	trim(a)
 }
 
 const bigdiv = {a : bigint#, b : bigint# -> bigint#
