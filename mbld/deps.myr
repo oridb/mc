@@ -182,7 +182,6 @@ const myrdeps = {b, name, mt
 			for l : ll
 				std.slpush(&dynlibs, l)
 			;;
-			std.put("lf.len: {}\n", lf.len)
 			for l : lf
 				std.slpush(&ldflags, l)
 			;;
@@ -601,7 +600,6 @@ const scrapecflags = {b, mt, path
 		collectflags(ldflagpat, ln, &ldflags)
 		collectflags(clibpat, ln, &libs)
 	;;
-	std.put("cflags.len: {}, ldflags.len: {}, libs.len: {}\n", cflags.len, ldflags.len, libs.len)
 	-> (cflags, libs, ldflags)
 }
 
