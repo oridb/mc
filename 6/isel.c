@@ -562,6 +562,7 @@ gencall(Isel *s, Node *n)
 	for (i = 0; i < nargs; i++) {
 		argsz = align(argsz, min(size(args[i]), Ptrsz));
 		argsz += size(args[i]);
+		argsz = align(argsz, 8);
 	}
 	argsz = align(argsz, 16);
 	stkbump = loclit(argsz, ModeQ);
@@ -578,6 +579,8 @@ gencall(Isel *s, Node *n)
 		argoff = alignto(argoff, exprtype(args[i]));
 		if (i >= vasplit)
 			vararg = 1;
+		else
+			argoff = align(argoff, 8);
 		if (stacknode(args[i])) {
 			src = locreg(ModeQ);
 			g(s, Ilea, arg, src, NULL);
@@ -998,6 +1001,8 @@ addarglocs(Isel *s, Func *fn)
 		argoff = alignto(argoff, decltype(arg));
 		if (i >= nargs)
 			vararg = 1;
+		else
+			argoff = align(argoff, 8);
 		if (stacknode(arg)) {
 			htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
 			argoff += size(arg);

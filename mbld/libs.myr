@@ -23,7 +23,7 @@ pkg bld =
 ;;
 
 /* Keep in sync with parse/parse.h */
-const Abiversion = 21
+const Abiversion = 22
 
 const builtlib = {b, mt, dep, dyndep
 	var ldep, l, u
