@@ -42,9 +42,12 @@ pkg bld =
 		libdeps	: (byte[:], byte[:], byte[:])[:]
 		tstdeps	: (byte[:], byte[:], byte[:])[:]
 		runtime	: byte[:]
-		incpath	: byte[:][:]
 		tags	: byte[:][:]
 		ldscript	: byte[:]
+
+		/* linking C */
+		incpath	: byte[:][:]
+		ldflags	: byte[:][:]
 
 		islib	: bool
 		istest	: bool

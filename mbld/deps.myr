@@ -21,11 +21,13 @@ type dep = union
 
 var usepat	: regex.regex#
 var cflagpat	: regex.regex#
+var ldflagpat	: regex.regex#
 var clibpat	: regex.regex#
 
 const __init__ = {
 	usepat = std.try(regex.compile("^\\s*use\\s+((\\<\\S+\\>)|\"(\\S+)\").*"))
 	cflagpat = std.try(regex.compile("/\\*\\s*CFLAGS:\\s*(.*)\\s*\\*/"))
+	ldflagpat = std.try(regex.compile("/\\*\\s*LDFLAGS:\\s*(.*)\\s*\\*/"))
 	clibpat = std.try(regex.compile("/\\*\\s*LIBS:\\s*(.*)\\s*\\*/"))
 }
 
@@ -57,8 +59,8 @@ const testdeps = {b
 
 const myrdeps = {b, name, mt
 	var t, p, o, u, n, to, tu
-	var libs, dynlibs
-	var cflags, ll
+	var libs, dynlibs, ldflags
+	var cflags, ll, lf
 	var g, a, deps
 	var gu, go
 
@@ -123,6 +125,7 @@ const myrdeps = {b, name, mt
 	;;
 
 	libs = [][:]
+	ldflags = [][:]
 	dynlibs = [][:]
 	for f : mt.inputs
 		p = std.pathcat(mt.dir, f)
@@ -170,7 +173,7 @@ const myrdeps = {b, name, mt
 			o = std.pathcat(opt_objdir, t)
 			std.slfree(t)
 
-			(cflags, ll) = scrapecflags(b, mt, p)
+			(cflags, ll, lf) = scrapecflags(b, mt, p)
 			depends(g, go, o)
 			n = node(g, o)
 			generates(g, n, o)
@@ -178,6 +181,10 @@ const myrdeps = {b, name, mt
 			ccmd(b, n, mt, o, p, cflags)
 			for l : ll
 				std.slpush(&dynlibs, l)
+			;;
+			std.put("lf.len: {}\n", lf.len)
+			for l : lf
+				std.slpush(&ldflags, l)
 			;;
 			mt.isdyn = true
 		elif std.hassuffix(f, config.Objsuffix)
@@ -192,7 +199,7 @@ const myrdeps = {b, name, mt
 		musecmd(b, gu, mt, tu, dynlibs)
 		builtlib(b, mt, libs, dynlibs)
 	else
-		linkcmd(b, go, mt, to, libs, dynlibs, false)
+		linkcmd(b, go, mt, to, libs, dynlibs, ldflags, false)
 		std.slfree(libs)
 	;;
 }
@@ -344,7 +351,7 @@ const addalt = {b, mt, kind, f
 	n = node(g, tp)
 	generates(g, n, tp)
 	depends(g, n, op)
-	linkcmd(b, n, mt, tp, libs, [][:], true)
+	linkcmd(b, n, mt, tp, libs, [][:], [][:], true)
 	std.slfree(libs)
 
 	n = node(g, tp)
@@ -432,7 +439,7 @@ const arcmd = {b, n, mt, ar
 	;;
 }
 
-const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
+const linkcmd = {b, n, mt, bin, libs, dynlibs, ldflags, istest
 	var dynlink
 
 	for c : config.Linkcmd
@@ -460,6 +467,9 @@ const linkcmd = {b, n, mt, bin, libs, dynlibs, istest
 	;;
 
 	dynlink = addlibs(b, &n.cmd, libs, mt.incpath) || mt.isdyn
+	for f : ldflags
+		std.slpush(&n.cmd, std.sldup(f))
+	;;
 	for l : dynlibs
 		std.slpush(&n.cmd, std.fmt("-l{}", l))
 	;;
@@ -561,8 +571,22 @@ const scrapedeps = {b : build#, mt, path
 	-> l
 }
 
+const collectflags = {pat, ln, dst
+	var fl
+
+	match regex.exec(pat, ln)
+	| `std.None:	/* skip */
+	| `std.Some m:
+		fl = std.strtok(m[1])
+		for s : fl
+			std.slpush(dst, std.sldup(s))
+		;;
+		std.slfree(fl)
+	;;
+}
+
 const scrapecflags = {b, mt, path
-	var f, fl, cflags, libs
+	var f, cflags, libs, ldflags
 
 	match bio.open(path, bio.Rd)
 	| `std.Ok fd:	f = fd
@@ -571,27 +595,14 @@ const scrapecflags = {b, mt, path
 
 	cflags = [][:]
 	libs = [][:]
+	ldflags = [][:]
 	for ln : bio.byline(f)
-		match regex.exec(cflagpat, ln)
-		| `std.None:	/* skip */
-		| `std.Some m:
-			fl = std.strtok(m[1])
-			for s : fl
-				std.slpush(&cflags, std.sldup(s))
-			;;
-			std.slfree(fl)
-		;;
-		match regex.exec(clibpat, ln)
-		| `std.None:	/* skip */
-		| `std.Some m:
-			fl = std.strtok(m[1])
-			for s : fl
-				std.slpush(&libs, std.sldup(s))
-			;;
-			std.slfree(fl)
-		;;
+		collectflags(cflagpat, ln, &cflags)
+		collectflags(ldflagpat, ln, &ldflags)
+		collectflags(clibpat, ln, &libs)
 	;;
-	-> (cflags, libs)
+	std.put("cflags.len: {}, ldflags.len: {}, libs.len: {}\n", cflags.len, ldflags.len, libs.len)
+	-> (cflags, libs, ldflags)
 }
 
 const generates = {g, n, dep
