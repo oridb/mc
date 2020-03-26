@@ -316,6 +316,7 @@ size_t tyalign(Type *t);
 size_t size(Node *n);
 ssize_t tyoffset(Type *ty, Node *memb);
 ssize_t offset(Node *aggr, Node *memb);
+int isaggregate(Type *t);
 int stacknode(Node *n);
 int floatnode(Node *n);
 void breakhere();

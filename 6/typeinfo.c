@@ -408,3 +408,10 @@ offset(Node *aggr, Node *memb)
 	return tyoffset(exprtype(aggr), memb);
 }
 
+int
+isaggregate(Type *t)
+{
+	t = tybase(t);
+	return (t->type == Tystruct || t->type == Tyarray || t->type == Tytuple ||
+		(t->type == Tyunion && !isenum(t)));
+}
