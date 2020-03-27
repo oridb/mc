@@ -158,7 +158,7 @@ rducon(FILE *fd, Type *ut)
 }
 
 /* Writes the name and type of a variable,
- * but only writes its intializer for thing
+ * but only writes its initializer for thing
  * we want to inline cross-file (currently,
  * the only cross-file inline is generics) */
 static void
@@ -397,7 +397,7 @@ tyunpickle(FILE *fd)
 	case Tyunres:
 		ty->name = unpickle(fd);
 		break;
-	case Typaram:	
+	case Typaram:
 		n = rdint(fd);
 		for (i = 0; i < n; i++)
 			rdtrait(fd, NULL, ty);
