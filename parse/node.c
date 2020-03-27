@@ -55,7 +55,7 @@ arraysz(Node *sz)
 		return 0;
         n = fold(sz, 1);
 	if (exprop(n) != Olit)
-		fatal(sz, "too much indirection when finding intializer. (initialization loop?)");
+		fatal(sz, "too much indirection when finding initializer. (initialization loop?)");
 
 	n = n->expr.args[0];
 	if (n->lit.littype != Lint)
