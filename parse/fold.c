@@ -247,6 +247,9 @@ fold(Node *n, int foldvar)
 		if (t->type == Tyarray && !strcmp(namestr(args[1]), "len")) {
 			r = t->asize;
 			r->expr.type = exprtype(n);
+		} else if (t->type == Tyunion && !strcmp(namestr(args[1]), "tag")) {
+			r = mkexpr(n->loc, Outag, args[0], NULL);
+			r->expr.type = mktype(n->loc, Tyint32);
 		}
 		break;
 	case Oarr:

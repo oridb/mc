@@ -2293,6 +2293,12 @@ infercompn(Node *n, Postcheck ***post, size_t *npost)
 			constrain(n, type(n), traittab[Tcint]);
 			found = 1;
 		}
+	} else if (ismemb && t->type == Tyunion) {
+		if (!strcmp(namestr(memb), "tag")) {
+			constrain(n, type(n), traittab[Tcnum]);
+			constrain(n, type(n), traittab[Tcint]);
+			found = 1;
+		}
 	} else {
 		if (tybase(t)->type == Typtr)
 			t = tybase(tf(t->sub[0]));
