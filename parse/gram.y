@@ -936,7 +936,7 @@ params	: fnparam {
 		$$.nn = 0;
 		lappend(&$$.nl, &$$.nn, $1);
 	}
-	| params Tcomma fnparam {lappend(&$$.nl, &$$.nn, $3);}
+	| params listsep fnparam {lappend(&$$.nl, &$$.nn, $3);}
 	| /* empty */ {$$.nl = NULL; $$.nn = 0;}
 	;
 
