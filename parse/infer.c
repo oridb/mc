@@ -1531,16 +1531,20 @@ inferpat(Node **np, Node *val, Node ***bind, size_t *nbind)
 
 	n = *np;
 	n = checkns(n, np);
+	n->expr.ispat = 1;
 	args = n->expr.args;
 	for (i = 0; i < n->expr.nargs; i++)
-		if (args[i]->type == Nexpr)
+		if (args[i]->type == Nexpr) {
+			args[i]->expr.ispat = 1;
 			inferpat(&args[i], val, bind, nbind);
+		}
 	switch (exprop(n)) {
 	case Otup:
 	case Ostruct:
 	case Oarr:
 	case Olit:
 	case Omemb:
+	case Olor:
 		infernode(np, NULL, NULL);
 		break;
 		/* arithmetic expressions just need to be constant */
@@ -1700,6 +1704,7 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	case Obsreq:	/* @a >>= @a -> @a */
 		infersub(n, ret, sawret, &isconst);
 		t = type(args[0]);
+
 		constrain(n, t, traittab[Tcnum]);
 		constrain(n, t, traittab[Tcint]);
 		isconst = args[0]->expr.isconst;
@@ -1722,6 +1727,15 @@ inferexpr(Node **np, Type *ret, int *sawret)
 
 		/* operands same type, returning bool */
 	case Olor:	/* @a || @b -> bool */
+		if (n->expr.ispat) {
+			infersub(n, ret, sawret, &isconst);
+			t = type(args[0]);
+			for (i = 1; i < nargs; i++)
+				t = unify(n, t, type(args[i]));
+			n->expr.isconst = isconst;
+			settype(n, t);
+			break;
+		}
 	case Oland:	/* @a && @b -> bool */
 	case Oeq:	/* @a == @a -> bool */
 	case One:	/* @a != @a -> bool */

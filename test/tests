@@ -127,6 +127,7 @@ B matchnest	P	'abcdef'
 F matchmixed
 F matchoverlap
 B matchctup	P	'l = [0, 1, 2, 3] n = 5'
+B matchor	E	0
 B bigliteral	P	34359738368
 B fltabs	P	'42.0'
 B arraylit-ni	E	2
