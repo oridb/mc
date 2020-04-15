@@ -1,0 +1,45 @@
+use std
+
+
+const main = {
+	type foo = union
+		`Black
+		`Blue
+		`Green
+		`Red
+		`Yellow
+		`White
+	;;
+
+	match `Green
+	| `Black || `White: std.exit(1)
+	| `Blue || `Green || `Red: std.put("color\n")
+	| _: std.exit(1)
+	;;
+
+	match `std.Some 100
+	| `std.Some (100 || 200 || 300): std.put("hundreds\n")
+	| `std.Some _: std.exit(1)
+	| _: std.exit(1)
+	;;
+
+	match `std.Some (`std.Some 333, 123, 789)
+	| `std.Some (`std.Some (101||451||789||333), _, _): std.put("good #1\n")
+	| `std.Some (`std.Some (100||200), 222, 333): std.exit(1)
+	| `std.Some _: std.exit(1)
+	| `std.None: std.exit(1)
+	;;
+
+	match 4
+	| 1||2||4: std.put("good $2\n")
+	| _: std.exit(1)
+	;;
+
+	const a = 4
+	match 4
+	| 1||2||a: std.put("good $3\n")
+	| _: std.exit(1)
+	;;
+
+	std.put("all good\n")
+}

@@ -82,6 +82,8 @@ typedef struct Frontier {
 	Node **cap; 		/* the captured variables of the pattern of this match clause */
 	size_t ncap;
 	Dtree *final;		/* final state, shared by all Frontiers for a specific (indxed by i) match clause */
+
+	struct Frontier *next;
 } Frontier;
 
 static Node *
@@ -409,6 +411,36 @@ nconstructors(Type *t)
 	return 0;
 }
 
+static Frontier *
+mkfrontier(int i, Node *lbl)
+{
+	Frontier *fs;
+
+	fs = zalloc(sizeof(Frontier));
+	fs->i = i;
+	fs->lbl = lbl;
+	fs->final = mkdtree(lbl->loc, lbl);
+	fs->final->accept = 1;
+	return fs;;
+}
+
+/*
+ * All immutable fields are shared; mutable fields must be cloned *
+ */
+static Frontier *
+frontierdup(Frontier *fs)
+{
+	Frontier *out;
+
+	out = mkfrontier(fs->i, fs->lbl);
+	out->slot = memdup(fs->slot, fs->nslot*sizeof(fs->slot[0]));
+	out->nslot = fs->nslot;
+	out->cap = memdup(fs->cap, fs->ncap*sizeof(fs->cap[0]));
+	out->ncap = fs->ncap;
+	return out;
+}
+
+
 /* addrec generates a list of slots for a Frontier by walking a pattern tree.
  * It collects only the terminal patterns like union tags and literals.
  * Non-terminal patterns like tuple/struct/array help encode the path only.
@@ -421,9 +453,16 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 	Node *memb, *name, *tagid, *p, *v, *lit, *dcl, *asn, *deref;
 	Ucon *uc;
 	char *s;
+	Frontier *next;
 
 	pat = fold(pat, 1);
 	switch (exprop(pat)) {
+	case Olor:
+		addrec(fs, pat->expr.args[1], val, path);
+		next = frontierdup(fs);
+		fs->next = next;
+		addrec(next, pat->expr.args[0], val, path);
+		break;
 	case Ogap:
 		lappend(&fs->slot, &fs->nslot, mkslot(path, pat, val));
 		break;
@@ -515,13 +554,12 @@ genfrontier(int i, Node *val, Node *pat, Node *lbl, Frontier ***frontier, size_t
 {
 	Frontier *fs;
 
-	fs = zalloc(sizeof(Frontier));
-	fs->i = i;
-	fs->lbl = lbl;
-	fs->final = mkdtree(lbl->loc, lbl);
-	fs->final->accept = 1;
+	fs = mkfrontier(i, lbl);
 	addrec(fs, pat, val, mkpath(NULL, 0));
-	lappend(frontier, nfrontier, fs);
+	while (fs != NULL) {
+		lappend(frontier, nfrontier, fs);
+		fs = fs->next;
+	}
 }
 
 /*
@@ -863,14 +901,20 @@ clearemit(Dtree *dt)
 	dt->emitted = 0;
 }
 
+static int
+capeq(Node *a, Node *b)
+{
+	return 1;
+}
+
 Dtree *
 gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 {
 	Dtree *root;
 	Node **pat;
 	size_t npat;
-	size_t i;
-	Frontier **frontier;
+	size_t i, j;
+	Frontier **frontier, *cur, *last;
 	size_t nfrontier;
 	FILE *csv;
 	char *dbgloc, *dbgfn, *dbgln;
@@ -887,8 +931,22 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 	for (i = 0; i < npat; i++) {
 		genfrontier(i, val, pat[i]->match.pat, lbl[i], &frontier, &nfrontier);
 	}
+
+	// to determine if two different sets of captures come from a or-pattern, which is NOT allowed.
+	last = NULL;
 	for (i = 0; i < nfrontier; i++) {
-		addcapture(pat[i]->match.block, frontier[i]->cap, frontier[i]->ncap);
+		cur = frontier[i];
+		if (last && last->i == cur->i) {
+			if (last->ncap != cur->ncap)
+				fatal(pat[cur->i], "captured variables are not equally bound in all or-pattern of the same group");
+			for (j = 0; j < cur->ncap; j++) {
+				if (!capeq(last->cap[j], cur->cap[j]))
+					fatal(pat[cur->i], "captured variables are not equally bound in all or-pattern of the same group");
+			}
+		} else {
+			addcapture(pat[cur->i]->match.block, cur->cap, cur->ncap);
+		}
+		last = cur;
 	}
 	root = compile(frontier, nfrontier);
 
