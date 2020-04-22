@@ -1716,7 +1716,6 @@ inferexpr(Node **np, Type *ret, int *sawret)
 	case Obsreq:	/* @a >>= @a -> @a */
 		infersub(n, ret, sawret, &isconst);
 		t = type(args[0]);
-
 		constrain(n, t, traittab[Tcnum]);
 		constrain(n, t, traittab[Tcint]);
 		isconst = args[0]->expr.isconst;
