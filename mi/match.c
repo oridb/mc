@@ -941,7 +941,7 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 		genfrontier(i, val, pat[i]->match.pat, lbl[i], &frontier, &nfrontier);
 	}
 
-	// to determine if two different sets of captures come from a or-pattern, which is NOT allowed.
+	/* to determine if two different sets of captures come from a or-pattern, which is NOT allowed. */
 	last = NULL;
 	for (i = 0; i < nfrontier; i++) {
 		cur = frontier[i];
