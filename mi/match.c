@@ -458,9 +458,9 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 	pat = fold(pat, 1);
 	switch (exprop(pat)) {
 	case Olor:
-		addrec(fs, pat->expr.args[1], val, path);
 		next = frontierdup(fs);
 		fs->next = next;
+		addrec(fs, pat->expr.args[1], val, path);
 		addrec(next, pat->expr.args[0], val, path);
 		break;
 	case Ogap:
@@ -938,10 +938,10 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 		cur = frontier[i];
 		if (last && last->i == cur->i) {
 			if (last->ncap != cur->ncap)
-				fatal(pat[cur->i], "captured variables are not equally bound in all or-pattern of the same group");
+				fatal(pat[cur->i], "number of wildcard variables in the or-patterns are not equal (%d != %d)", last->ncap, cur->ncap);
 			for (j = 0; j < cur->ncap; j++) {
 				if (!capeq(last->cap[j], cur->cap[j]))
-					fatal(pat[cur->i], "captured variables are not equally bound in all or-pattern of the same group");
+					fatal(pat[cur->i], "wildcard variables have different types in the or-patterns");
 			}
 		} else {
 			addcapture(pat[cur->i]->match.block, cur->cap, cur->ncap);
