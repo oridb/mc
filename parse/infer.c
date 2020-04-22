@@ -1580,11 +1580,23 @@ inferpat(Node **np, Node *val, Node ***bind, size_t *nbind)
 				fatal(n, "pattern shadows variable declared on %s:%d near %s",
 						fname(s->loc), lnum(s->loc), ctxstr(s));
 		} else {
-			t = mktyvar(n->loc);
-			s = mkdecl(n->loc, n->expr.args[0], t);
-			s->decl.init = val;
-			settype(n, t);
-			lappend(bind, nbind, s);
+			/* Scan the already collected bound variables in the pattern of this match case.
+			 * If a bound variable with the same name is found, assign the variable the existing decl.
+			 * Otherwise, create a new decl for the variable */
+			s = NULL;
+			for (i = 0; !s && i < *nbind; i++)
+				if (nameeq(args[0], (*bind)[i]->decl.name))
+					s = (*bind)[i];
+
+			if (s) {
+				t = s->decl.type;
+			} else {
+				t = mktyvar(n->loc);
+				s = mkdecl(n->loc, n->expr.args[0], t);
+				s->decl.init = val;
+				settype(n, t);
+				lappend(bind, nbind, s);
+			}
 		}
 		settype(n, t);
 		n->expr.did = s->decl.did;
