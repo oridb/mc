@@ -906,7 +906,14 @@ clearemit(Dtree *dt)
 static int
 capeq(Node *a, Node *b)
 {
-	return 1;
+	Node *pa, *pb, *va, *vb;
+
+	pa = a->expr.args[0];
+	pb = b->expr.args[0];
+	va = a->expr.args[1];
+	vb = b->expr.args[1];
+
+	return decltype(decls[pa->expr.did]) == decltype(decls[pb->expr.did]) && loadeq(va, vb);
 }
 
 Dtree *

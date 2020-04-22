@@ -41,5 +41,25 @@ const main = {
 	| _: std.exit(1)
 	;;
 
+	type bar = union
+		`A int
+		`B int
+		`C int
+		`D (byte[:], int)
+		`E (byte[:], int)
+		`F (int, std.option(int))
+		`G (int, std.option(int))
+	;;
+
+	match `A 123
+	| `A x || `B x: std.put("good #4 {}\n", x)
+	| _: std.exit(1)
+	;;
+
+	match `G (223, `std.Some 556)
+	| `F (x, `std.Some y) || `G (x, `std.Some y): std.put("good #5 x={} y={}\n", x, y)
+	| _: std.exit(1)
+	;;
+
 	std.put("all good\n")
 }
