@@ -913,7 +913,7 @@ capeq(Node *a, Node *b)
 	va = a->expr.args[1];
 	vb = b->expr.args[1];
 
-	return decltype(decls[pa->expr.did]) == decltype(decls[pb->expr.did]) && loadeq(va, vb);
+	return pa->expr.did == pb->expr.did && loadeq(va, vb);
 }
 
 Dtree *
