@@ -459,8 +459,7 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 	switch (exprop(pat)) {
 	case Olor:
 		next = frontierdup(fs);
-		if (fs->next)
-			next->next = fs->next;
+		next->next = fs->next;
 		fs->next = next;
 		addrec(fs, pat->expr.args[1], val, path);
 		addrec(next, pat->expr.args[0], val, path);
