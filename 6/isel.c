@@ -516,17 +516,47 @@ countargs(Type *t)
 	return nargs;
 }
 
+static void
+placearg(Isel *s, Node *argn, Loc *argloc, Loc *rsp, int vararg, size_t *nfloats, size_t *nints, size_t *argoff)
+{
+	Loc *src, *dst;
+	size_t a;
+
+	if (stacknode(argn)) {
+		src = locreg(ModeQ);
+		g(s, Ilea, argloc, src, NULL);
+		a = tyalign(exprtype(argn));
+		blit(s, rsp, src, *argoff, 0, size(argn), a);
+		*argoff += size(argn);
+	} else if (!vararg && isfloatmode(argloc->mode) && *nfloats < Nfloatregargs) {
+		dst = coreg(floatargregs[*nfloats], argloc->mode);
+		argloc = inri(s, argloc);
+		g(s, Imovs, argloc, dst, NULL);
+		(*nfloats)++;
+	} else if (!vararg && isintmode(argloc->mode) && *nints < Nintregargs) {
+		dst = coreg(intargregs[*nints], argloc->mode);
+		argloc = inri(s, argloc);
+		g(s, Imov, argloc, dst, NULL);
+		(*nints)++;
+	} else {
+		dst = locmem(*argoff, rsp, NULL, argloc->mode);
+		argloc = inri(s, argloc);
+		stor(s, argloc, dst);
+		*argoff += size(argn);
+	}
+}
+
 static Loc *
 gencall(Isel *s, Node *n)
 {
-	Loc *src, *dst, *arg;	/* values we reduced */
+	Loc *arg;	/* values we reduced */
 	size_t argsz, argoff, nargs, vasplit;
 	size_t nfloats, nints;
 	Loc *retloc, *rsp, *ret;	/* hard-coded registers */
 	Loc *stkbump;	/* calculated stack offset */
 	Type *t, *fn;
 	Node **args;
-	size_t i, a;
+	size_t i;
 	int vararg;
 
 	rsp = locphysreg(Rrsp);
@@ -581,28 +611,8 @@ gencall(Isel *s, Node *n)
 			vararg = 1;
 		else
 			argoff = align(argoff, 8);
-		if (stacknode(args[i])) {
-			src = locreg(ModeQ);
-			g(s, Ilea, arg, src, NULL);
-			a = tyalign(exprtype(args[i]));
-			blit(s, rsp, src, argoff, 0, size(args[i]), a);
-			argoff += size(args[i]);
-		} else if (!vararg && isfloatmode(arg->mode) && nfloats < Nfloatregargs) {
-			dst = coreg(floatargregs[nfloats], arg->mode);
-			arg = inri(s, arg);
-			g(s, Imovs, arg, dst, NULL);
-			nfloats++;
-		} else if (!vararg && isintmode(arg->mode) && nints < Nintregargs) {
-			dst = coreg(intargregs[nints], arg->mode);
-			arg = inri(s, arg);
-			g(s, Imov, arg, dst, NULL);
-			nints++;
-		} else {
-			dst = locmem(argoff, rsp, NULL, arg->mode);
-			arg = inri(s, arg);
-			stor(s, arg, dst);
-			argoff += size(args[i]);
-		}
+
+		placearg(s, args[i], arg, rsp, vararg, &nfloats, &nints, &argoff);
 	}
 	call(s, n);
 	if (argsz)
@@ -982,6 +992,33 @@ savedregs[] = {
 	Rnone
 };
 
+static void
+retrievearg(Isel *s, Node *argn, int vararg, size_t *nfloats, size_t *nints, size_t *argoff)
+{
+	Loc *a, *l;
+
+	if (stacknode(argn)) {
+		htput(s->stkoff, argn, itop(-(*argoff + 2*Ptrsz)));
+		*argoff += size(argn);
+	} else if (!vararg && isfloatmode(mode(argn)) && *nfloats < Nfloatregargs) {
+		a = coreg(floatargregs[*nfloats], mode(argn));
+		l = loc(s, argn);
+		g(s, Imovs, a, l, NULL);
+		htput(s->reglocs, argn, l);
+		(*nfloats)++;
+	} else if (!vararg && isintmode(mode(argn)) && *nints < Nintregargs) {
+		a = coreg(intargregs[*nints], mode(argn));
+		l = loc(s, argn);
+		g(s, Imov, a, l, NULL);
+		htput(s->reglocs, argn, l);
+		(*nints)++;
+	} else if (tybase(decltype(argn))->type != Tyvoid) {
+		/* varargs go on the stack */
+		htput(s->stkoff, argn, itop(-(*argoff + 2*Ptrsz)));
+		*argoff += size(argn);
+	}
+}
+
 void
 addarglocs(Isel *s, Func *fn)
 {
@@ -989,7 +1026,6 @@ addarglocs(Isel *s, Func *fn)
 	size_t argoff;
 	int vararg;
 	Node *arg;
-	Loc *a, *l;
 
 	argoff = 0;
 	nfloats = 0;
@@ -1003,26 +1039,8 @@ addarglocs(Isel *s, Func *fn)
 			vararg = 1;
 		else
 			argoff = align(argoff, 8);
-		if (stacknode(arg)) {
-			htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
-			argoff += size(arg);
-		} else if (!vararg && isfloatmode(mode(arg)) && nfloats < Nfloatregargs) {
-			a = coreg(floatargregs[nfloats], mode(arg));
-			l = loc(s, arg);
-			g(s, Imovs, a, l, NULL);
-			htput(s->reglocs, arg, l);
-			nfloats++;
-		} else if (!vararg && isintmode(mode(arg)) && nints < Nintregargs) {
-			a = coreg(intargregs[nints], mode(arg));
-			l = loc(s, arg);
-			g(s, Imov, a, l, NULL);
-			htput(s->reglocs, arg, l);
-			nints++;
-		} else if (tybase(decltype(arg))->type != Tyvoid) {
-			/* varargs go on the stack */
-			htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
-			argoff += size(arg);
-		}
+
+		retrievearg(s, arg, vararg, &nfloats, &nints, &argoff);
 	}
 }
 
