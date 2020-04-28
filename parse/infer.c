@@ -1535,7 +1535,6 @@ inferpat(Node **np, Node *val, Node ***bind, size_t *nbind)
 	args = n->expr.args;
 	for (i = 0; i < n->expr.nargs; i++)
 		if (args[i]->type == Nexpr) {
-			args[i]->expr.ispat = 1;
 			inferpat(&args[i], val, bind, nbind);
 		}
 	switch (exprop(n)) {
