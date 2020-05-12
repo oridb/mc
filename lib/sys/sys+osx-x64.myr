@@ -813,6 +813,7 @@ pkg sys =
 	const bind	: (sock : fd, addr : sockaddr#, len : size -> int)
 	const setsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size -> int)
 	const getsockopt	: (sock : fd, lev : sockproto, opt : sockopt, val : void#, len : size# -> int)
+	const recvfrom	: (sock : fd, buf : byte[:], flags : int, addr : sockaddr#, addr_len : size# -> int)
 
 	/* memory mapping */
 	const munmap	: (addr:byte#, len:size -> int64)
@@ -1005,6 +1006,7 @@ const listen	= {sock, backlog;	-> (syscall(Syslisten, a(sock), a(backlog)) : int
 const bind	= {sock, addr, len;	-> (syscall(Sysbind, a(sock), a(addr), a(len)) : int)}
 const setsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
 const getsockopt	= {sock, lev, opt, val, len;	-> (syscall(Syssetsockopt, a(sock), a(lev), a(opt), a(val), a(len)) : int)}
+const recvfrom	= {sock, buf, flags, addr, addr_len;	-> (syscall(Sysrecvfrom, a(sock), (buf : byte#), a(buf.len), a(flags), a(addr), a(addr_len)) : int)}
 
 /* memory management */
 const munmap	= {addr, len;		-> syscall(Sysmunmap, a(addr), a(len))}

@@ -91,8 +91,10 @@ const announcesock = {proto, str
 	if sys.bind(sock, sa, sz) < 0
 		-> `Err "failed to bind socket"
 	;;
-	if sys.listen((sock : sys.fd), 10) < 0
-		-> `Err "unable to listen on socket"
+	if proto == sys.Sockstream
+		if sys.listen((sock : sys.fd), 10) < 0
+			-> `Err "unable to listen on socket"
+		;;
 	;;
 	-> `Ok mk([.lfd=(sock : fd)])
 }
