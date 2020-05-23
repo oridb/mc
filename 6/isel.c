@@ -500,22 +500,6 @@ call(Isel *s, Node *n)
 	g(s, op, f, NULL);
 }
 
-static size_t
-countargs(Type *t)
-{
-	size_t nargs;
-
-	t = tybase(t);
-	nargs = t->nsub - 1;
-	if (isstacktype(t->sub[0]))
-		nargs++;
-	/* valists are replaced with hidden type parameter,
-	 * which we want on the stack for ease of ABI */
-	if (tybase(t->sub[t->nsub - 1])->type == Tyvalist)
-		nargs--;
-	return nargs;
-}
-
 static void
 placearg(Isel *s, Node *argn, Loc *argloc, Loc *rsp, int vararg, size_t *nfloats, size_t *nints, size_t *argoff)
 {

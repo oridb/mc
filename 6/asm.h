@@ -46,6 +46,20 @@ typedef enum {
 } Mode;
 
 typedef enum {
+	PassInNoPref,
+	PassInSSE,
+	PassInInt,
+	PassInMemory,
+} PassIn;
+
+typedef enum {
+	RetVoid,
+	RetReg,
+	RetSmallAggregate,
+	RetBig,
+} RetType;
+
+typedef enum {
 	Classbad,
 	Classint,
 	Classflt,
@@ -316,7 +330,10 @@ size_t tyalign(Type *t);
 size_t size(Node *n);
 ssize_t tyoffset(Type *ty, Node *memb);
 ssize_t offset(Node *aggr, Node *memb);
+size_t countargs(Type *t);
+void classify(Type *t, PassIn *p);
 int isaggregate(Type *t);
+RetType howreturned(Type *t);
 int stacknode(Node *n);
 int floatnode(Node *n);
 void breakhere();
