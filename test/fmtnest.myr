@@ -1,0 +1,18 @@
+use std
+
+type foo = struct
+        f2 : uint8
+        f3 : (uint8, flt64)
+;;
+
+const main = {
+        var f : foo = [  .f2 = 2, .f3 = (3, 4.4) ]
+        var str = std.fmt("{}", f)
+        for var j = 0; j < str.len; ++j
+                /* Try not to accidentally create any shell characters */
+                if str[j] == ('(' : byte) || str[j] == (')' : byte) || str[j] == ('[' : byte) || str[j] == (']' : byte) || str[j] == (' ' : byte) || str[j] == ('=' : byte)
+                        str[j] = ('_' : byte)
+                ;;
+        ;;
+        std.put("{}\n", str)
+}

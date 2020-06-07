@@ -176,5 +176,6 @@ B destructuretup	E	0
 B nestedgoto	E	0
 B initializer	E	0
 B fmtalign	E	0
+B fmtnest	P	_.f2_2,_.f3__3,_4.4__
 B implexpr	P	12,z,hello
 B implexpr-concrete	P	zigzag

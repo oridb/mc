@@ -331,7 +331,7 @@ tyalign(Type *ty)
 		break;
 	case Tytuple:
 		for (i = 0; i < ty->nsub; i++)
-			align = max(align, tyalign(ty->sub[0]));
+			align = max(align, tyalign(ty->sub[i]));
 		break;
 	case Tyunion:
 		align = 4;
