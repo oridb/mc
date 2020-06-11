@@ -295,6 +295,8 @@ char *tydescid(char *buf, size_t bufsz, Type *ty);
 Loc *coreg(Reg r, Mode m);
 int isfloatmode(Mode m);
 int isintmode(Mode m);
+int issubreg(Loc *, Loc *);
+int dumbmov(Loc *, Loc *);
 
 /* emitting instructions */
 Insn *mkinsn(int op, ...);

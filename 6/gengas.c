@@ -107,12 +107,6 @@ locprint(FILE *fd, Loc *l, char spec)
 	}
 }
 
-static int
-issubreg(Loc *a, Loc *b)
-{
-	return rclass(a) == rclass(b) && a->mode != b->mode;
-}
-
 void
 iprintf(FILE *fd, Insn *insn)
 {
@@ -132,29 +126,22 @@ iprintf(FILE *fd, Insn *insn)
 				insn->args[1] = coreg(insn->args[1]->reg.colour, ModeL);
 			}
 		}
-		/* moving a reg to itself is dumb. */
-		if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
-                    return;
+		if(dumbmov(insn->args[0], insn->args[1]))
+			return;
 		break;
 	case Imovs:
-		if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
-			break;
-		/* moving a reg to itself is dumb. */
-		if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+		if(dumbmov(insn->args[0], insn->args[1]))
 			return;
 		break;
 	case Imov:
 		assert(!isfloatmode(insn->args[0]->mode));
-		if (insn->args[0]->type != Locreg || insn->args[1]->type != Locreg)
-			break;
-		if (insn->args[0]->reg.colour == Rnone || insn->args[1]->reg.colour == Rnone)
-			break;
-		/* if one reg is a subreg of another, we can just use the right
-		 * mode to move between them. */
+		/* 
+		 * if one reg is a subreg of another, we can just use the right
+		 * mode to move between them, without any cost.
+		 */
 		if (issubreg(insn->args[0], insn->args[1]))
 			insn->args[0] = coreg(insn->args[0]->reg.colour, insn->args[1]->mode);
-		/* moving a reg to itself is dumb. */
-		if (insn->args[0]->reg.colour == insn->args[1]->reg.colour)
+		if(dumbmov(insn->args[0], insn->args[1]))
 			return;
 		break;
 	default:
