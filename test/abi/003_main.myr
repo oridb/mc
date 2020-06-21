@@ -1,0 +1,78 @@
+use std
+
+pkg =
+        type t1 = struct
+                a : uint64
+        ;;
+        type t2 = struct
+                f : uint8
+        ;;
+        type t3 = struct
+                a : uint64
+                b : uint64
+        ;;
+        type t4 = struct
+                dummy1 : uint8
+                dummy2 : uint8
+                dummy3 : uint8
+                dummy4 : uint8
+                f : uint8
+        ;;
+;;
+
+const main = {
+        var a : t1 = [.a=6]
+        var ret : t2
+
+        /* This one succeeds */
+        ret = fn_10_myr(a)
+
+        /*
+         * This one fails if gencall is too sloppy with the return type.
+         * Since t2 is so small, we might have clobbered the value of a.
+         */
+        ret = fn_10_myr(a)
+
+        if ret.f != 1
+                std.exit(1)
+        ;;
+
+        /*
+         * Now again, for slightly bigger types. This one probably won't
+         * happen due to the way the structs are aligned on stack, no
+         * matter how sloppy gencall gets.
+         */
+        var b : t3 = [ .a = 12, .b = 24 ]
+        var ret2 : t4
+        ret = fn_11_myr(b)
+        ret = fn_11_myr(b)
+
+        if ret.f != 1
+                std.exit(1)
+        ;;
+
+        std.exit(0)
+}
+
+
+const fn_10_myr = { a : t1
+        if a.a != 6
+                goto bad
+        ;;
+
+        -> [.f=1]
+
+:bad
+        -> [.f=2]
+}
+
+const fn_11_myr = { b : t3
+        if b.a != 12 || b.b != 24
+                goto bad
+        ;;
+
+        -> [.f=1]
+
+:bad
+        -> [.f=2]
+}

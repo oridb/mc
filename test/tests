@@ -182,3 +182,9 @@ B fmtalign	E	0
 B fmtnest	P	_.f2_2,_.f3__3,_4.4__
 B implexpr	P	12,z,hello
 B implexpr-concrete	P	zigzag
+B abi/001-return-tuple	E	0
+B abi/002-arg-alignment	E	0
+B abi/003-ret-alignment	E	0
+B abi/004-torture-1	E	0
+B abi/005-torture-2	E	0
+B abi/006-torture-3	E	0

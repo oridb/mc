@@ -1,0 +1,7 @@
+use std
+use "001_types"
+
+pkg = 
+    extern const fn_1_c : ( -> t1)
+    extern const check_c_to_myr_fns : (-> int)
+;;

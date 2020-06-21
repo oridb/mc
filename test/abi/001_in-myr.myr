@@ -1,0 +1,11 @@
+use std
+use "001_types"
+
+pkg =
+    const fn_1_myr : ( -> t1)
+;;
+
+const fn_1_myr = { 
+    -> [.field_1=(249229305184256,3.36328125)]
+}
+

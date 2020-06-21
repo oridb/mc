@@ -1,0 +1,29 @@
+use std
+use "001_types"
+use "001_in-myr"
+use "001_in-c"
+
+const main = {
+    /* myr calling myr */
+    var ret_1 : t1 = fn_1_myr()
+    if !(((ret_1.field_1.0==249229305184256) && (ret_1.field_1.1==3.36328125)))
+        std.put("ret_1 = {}\n", ret_1)
+        std.put("myr_to_myr 1 failed\n")
+        std.exit(1)
+    ;;
+
+    /* myr calling c */
+    ret_1 = fn_1_c()
+    if !(((ret_1.field_1.0==249229305184256) && (ret_1.field_1.1==3.36328125)))
+        std.put("ret_1 = {}\n", ret_1)
+        std.put("myr_to_c 1 failed\n")
+        std.exit(1)
+    ;;
+
+    if !(check_c_to_myr_fns() == 0)
+        std.put("c_to_myr failed\n")
+        std.exit(1)
+    ;;
+
+    std.exit(0)
+}

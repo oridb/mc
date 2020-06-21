@@ -1,0 +1,24 @@
+use std
+
+pkg =
+        type foo = struct
+                bar : uint32
+        ;;
+;;
+
+const main = {
+        var a : foo = [.bar = 158747960]
+        call_me(a)
+
+        /*
+         * If argument alignment is not respected, the above will stuff
+         * all eight bytes of %rdi into four bytes of stack, and the
+         * overflow will clobber enough to cause a segfault. Explicitly
+         * exiting via std.exit(0) will mask this failure, however.
+         */
+}
+
+
+const call_me = { a : foo
+        -> void
+}

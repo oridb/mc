@@ -1,0 +1,39 @@
+bin 001-return-tuple = 
+        001_main.myr
+        001_in-c.glue.c
+        001_in-c.myr
+        001_in-myr.myr
+        001_types.myr
+;;
+
+bin 002-arg-alignment =
+        002_main.myr
+;;
+
+bin 003-ret-alignment =
+        003_main.myr
+;;
+
+bin 004-torture-1 =
+        004_main.myr
+        004_in-c.glue.c
+        004_in-c.myr
+        004_in-myr.myr
+        004_types.myr
+;;
+
+bin 005-torture-2 =
+        005_main.myr
+        005_in-c.glue.c
+        005_in-c.myr
+        005_in-myr.myr
+        005_types.myr
+;;
+
+bin 006-torture-3 =
+        006_main.myr
+        006_in-c.glue.c
+        006_in-c.myr
+        006_in-myr.myr
+        006_types.myr
+;;
