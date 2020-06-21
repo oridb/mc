@@ -4,9 +4,12 @@
 #	B: Expect that this test will build.
 #	F: Expect that this test will not build.
 #    testname: Test case
-#	The test that will run. We will try to
-#	compile 'testname.myr' to 'testname',
-#	and then execute it, verifying the result
+#	The test that will run. If testname contains
+#	no '/', we will try to compile 'testname.myr'
+#	to 'testname', and then execute it, verifying the
+#	result. If the testname is of form a/b/c/.../y/z,
+#	we will try to mbld target z located in subdir
+#	a/b/c/.../y and execute, again verifying.
 #    [E|P|C]: Result type
 #	E tells us that the result is an exit status
 #	P tells us that the result is on stdout,
