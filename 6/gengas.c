@@ -344,6 +344,7 @@ genfunc(FILE *fd, Func *fn, Htab *globls, Htab *strtab)
 	is.envoff = fn->envoff;
 	is.globls = globls;
 	is.ret = fn->ret;
+	is.rettype = fn->rettype;
 	is.cfg = fn->cfg;
 	is.cwd = strdup(cwd);
 

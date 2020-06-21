@@ -160,6 +160,7 @@ struct Func {
 	Htab *envoff;	/* Loc* -> int envoff map */
 	size_t stksz;	/* stack size */
 	Node *ret;	/* return value */
+	ArgType rettype;	/* how to actually get ret out */
 
 	Cfg  *cfg;	/* flow graph */
 	char isexport;	/* is this exported from the asm? */
@@ -193,6 +194,7 @@ struct Isel {
 	Asmbb *curbb;
 
 	Node *ret;          /* we store the return into here */
+	ArgType rettype;    /* how ret actually gets out of the function */
 	Htab *spillslots;   /* reg id  => int stkoff */
 	Htab *reglocs;      /* decl id => Loc *reg */
 	Htab *stkoff;       /* decl id => int stkoff */

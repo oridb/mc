@@ -415,7 +415,7 @@ countargs(Type *t)
 
 	t = tybase(t);
 	nargs = t->nsub - 1;
-	if (isstacktype(t->sub[0]))
+	if (classify(t->sub[0]) == ArgBig)
 		nargs++;
 	/* valists are replaced with hidden type parameter,
 	 * which we want on the stack for ease of ABI */

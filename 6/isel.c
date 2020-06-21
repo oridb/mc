@@ -27,6 +27,10 @@ regid floatargregs[] = {
 	Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
 };
 regid intargregs[] = {Rrdi, Rrsi, Rrdx, Rrcx, Rr8, Rr9};
+#define Nfloatregrets 2
+#define Nintregrets 2
+regid fltretregs[] = {Rxmm0d, Rxmm1d};
+regid intretregs[] = {Rrax, Rrdx};
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -81,6 +85,26 @@ tymode(Type *t)
 		break;
 	}
 	return ModeNone;
+}
+
+static Mode tymodepart(Type *t, int is_float, size_t displacement)
+{
+	assert(isstacktype(t));
+	size_t sz = tysize(t);
+
+	if (is_float) {
+		switch(sz - displacement) {
+		case 4: return ModeF; break;
+		default: return ModeD; break;
+		}
+	} else {
+		switch(sz - displacement) {
+		case 1: return ModeB; break;
+		case 2: return ModeW; break;
+		case 4: return ModeL; break;
+		default: return ModeQ; break;
+		}
+	}
 }
 
 static Mode
@@ -629,43 +653,86 @@ plus8(Isel *s, Loc *base)
 	return locmem(8, forcedreg, NULL, ModeQ);
 }
 
-static Loc *
+static void
 gencall(Isel *s, Node *n)
 {
 	Loc *arg;	/* values we reduced */
-	size_t argsz, argoff, nargs, vasplit;
+	size_t argsz, argoff, nargs, falseargs, vasplit;
 	size_t nfloats, nints;
-	Loc *retloc, *rsp, *ret;	/* hard-coded registers */
+	Loc *retloc1, *retloc2, *rsp;	/* hard-coded registers */
+	Loc *ret;
+	size_t nextintretreg = 0, nextfltretreg = 0;
 	Loc *stkbump;	/* calculated stack offset */
 	Type *t, *fn;
 	Node **args;
+	Node *retnode;
+	ArgType rettype;
 	size_t i;
 	int vararg;
 
 	rsp = locphysreg(Rrsp);
+
 	t = exprtype(n);
-	if (tybase(t)->type == Tyvoid || isstacktype(t)) {
-		retloc = NULL;
-		ret = NULL;
-	} else if (istyfloat(t)) {
-		retloc = coreg(Rxmm0d, mode(n));
-		ret = locreg(mode(n));
-	} else {
-		retloc = coreg(Rrax, mode(n));
-		ret = locreg(mode(n));
+	retloc1 = NULL;
+	retloc2 = NULL;
+	rettype = classify(t);
+
+	switch (rettype) {
+	case ArgVoid:
+	case ArgBig:
+		break;
+	case ArgReg:
+		if (istyfloat(t)) {
+			retloc1 = coreg(Rxmm0d, mode(n));
+		} else {
+			retloc1 = coreg(Rrax, mode(n));
+		}
+		break;
+	case ArgSmallAggr_Int:
+		retloc1 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 0));
+		break;
+	case ArgSmallAggr_Flt:
+		retloc1 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 0));
+		break;
+	case ArgSmallAggr_Int_Int:
+		retloc1 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 0));
+		retloc2 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 8));
+		break;
+	case ArgSmallAggr_Int_Flt:
+		retloc1 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 0));
+		retloc2 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 8));
+		break;
+	case ArgSmallAggr_Flt_Int:
+		retloc1 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 0));
+		retloc2 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 8));
+		break;
+	case ArgSmallAggr_Flt_Flt:
+		retloc1 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 0));
+		retloc2 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 8));
+		break;
 	}
+
 	fn = tybase(exprtype(n->expr.args[0]));
 	/* calculate the number of args we expect to see, adjust
 	 * for a hidden return argument. */
 	vasplit = countargs(fn);
 	argsz = 0;
-	if (exprop(n) == Ocall) {
-		args = &n->expr.args[1];
-		nargs = n->expr.nargs - 1;
-	} else {
-		args = &n->expr.args[2];
-		nargs = n->expr.nargs - 2;
+
+	/*
+	 * { the function itself, [optional environment], [optional return information], real arg 1, ... }
+	 */
+	falseargs = 1;
+	if (exprop(n) == Ocallind) {
+		falseargs++;
 	}
+	if (rettype != ArgVoid) {
+		retnode = n->expr.args[falseargs];
+		if (rettype != ArgBig) {
+			falseargs++;
+		}
+	}
+	args = &n->expr.args[falseargs];
+	nargs = n->expr.nargs - falseargs;
 	/* Have to calculate the amount to bump the stack
 	 * pointer by in one pass first, otherwise if we push
 	 * one at a time, we evaluate the args in reverse order.
@@ -746,13 +813,46 @@ gencall(Isel *s, Node *n)
 	call(s, n);
 	if (argsz)
 		g(s, Iadd, stkbump, rsp, NULL);
-	if (retloc) {
-		if (isfloatmode(retloc->mode))
-			g(s, Imovs, retloc, ret, NULL);
+
+	switch (rettype) {
+	case ArgVoid:
+	case ArgBig:
+		/*
+		 * No need to do anything. The return location, if any, was taken care of
+		 * as the hidden argument.
+		 */
+		break;
+	case ArgReg:
+		/* retnode is the actual thing we're storing in */
+		ret = varloc(s, retnode);
+		if (isfloatmode(retloc1->mode))
+			g(s, Imovs, retloc1, ret, NULL);
 		else
-			g(s, Imov, retloc, ret, NULL);
+			g(s, Imov, retloc1, ret, NULL);
+		break;
+	case ArgSmallAggr_Int:
+		g(s, Imov, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		break;
+	case ArgSmallAggr_Flt:
+		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		break;
+	case ArgSmallAggr_Int_Int:
+		g(s, Imov, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		g(s, Imov, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		break;
+	case ArgSmallAggr_Int_Flt:
+		g(s, Imov,  retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		g(s, Imovs, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		break;
+	case ArgSmallAggr_Flt_Int:
+		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		g(s, Imov,  retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		break;
+	case ArgSmallAggr_Flt_Flt:
+		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		g(s, Imovs, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		break;
 	}
-	return ret;
 }
 
 static Loc*
@@ -892,7 +992,7 @@ selexpr(Isel *s, Node *n)
 		if (mode(args[0]) == ModeF) {
 			a = locreg(ModeF);
 			b = loclit(1LL << (31), ModeF);
-			g(s, Imovs, r, a);
+			g(s, Imovs, r, a, NULL);
 		} else if (mode(args[0]) == ModeD) {
 			a = locreg(ModeQ);
 			b = loclit(1LL << 63, ModeQ);
@@ -990,7 +1090,7 @@ selexpr(Isel *s, Node *n)
 		break;
 	case Ocall:
 	case Ocallind:
-		r = gencall(s, n);
+		gencall(s, n);
 		break;
 	case Oret:
 		a = locstrlbl(s->cfg->end->lbls[0]);
@@ -1278,16 +1378,56 @@ epilogue(Isel *s)
 	Loc *rsp, *rbp;
 	Loc *ret;
 	size_t i;
+	size_t nextintretreg = 0, nextfltretreg = 0;
 
 	rsp = locphysreg(Rrsp);
 	rbp = locphysreg(Rrbp);
-	if (s->ret) {
+	switch (s->rettype) {
+	case ArgVoid: break;
+	case ArgReg:
+		/* s->ret is a value, and will be returned that way */
 		ret = loc(s, s->ret);
 		if (istyfloat(exprtype(s->ret)))
 			g(s, Imovs, ret, coreg(Rxmm0d, ret->mode), NULL);
 		else
 			g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
+		break;
+	case ArgBig:
+		/* s->ret is an address, and will be returned that way */
+		ret = loc(s, s->ret);
+		g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
+		break;
+	case ArgSmallAggr_Int:
+		/* s->ret is an address, and will be returned as values */
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		break;
+	case ArgSmallAggr_Flt:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		break;
+	case ArgSmallAggr_Int_Int:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		break;
+	case ArgSmallAggr_Int_Flt:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		break;
+	case ArgSmallAggr_Flt_Int:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		break;
+	case ArgSmallAggr_Flt_Flt:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		break;
 	}
+
 	/* restore registers */
 	for (i = 0; savedregs[i] != Rnone; i++) {
 		if (isfloatmode(s->calleesave[i]->mode)) {
