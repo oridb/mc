@@ -531,16 +531,6 @@ classify_recursive(Type *t, PassIn *p, size_t *total_offset)
 	*total_offset = align(cur_offset + sz, tyalign(t));
 }
 
-void
-classify(Type *t, PassIn *p)
-{
-	size_t total_offset = 0;
-	/* p must be of length exactly 2 */
-	p[0] = PassInNoPref;
-	p[1] = PassInNoPref;
-	classify_recursive(t, p, &total_offset);
-}
-
 int
 isaggregate(Type *t)
 {
@@ -549,30 +539,57 @@ isaggregate(Type *t)
 		(t->type == Tyunion && !isenum(t)));
 }
 
-RetType howreturned(Type *t)
+ArgType
+classify(Type *t)
 {
-	/*
-	 * This is only for determining how values are returned from functions.
-	 * Determining how arguments are passed requires register counting using
-	 * the whole prototype.
-	 */
 	size_t sz = tysize(t);
-	PassIn pc[2] = { PassInNoPref, PassInNoPref };
+	size_t total_offset = 0;
+
+	/* p must be of length exactly 2 */
+	PassIn pi[2] = { PassInNoPref, PassInNoPref };
 
 	if (tybase(t)->type == Tyvoid) {
-		return RetVoid;
+		return ArgVoid;
 	} else if (isstacktype(t)) {
 		if (isaggregate(t) && sz <= 16) {
-			classify(t, pc);
-			if (pc[0] == PassInMemory || pc[1] == PassInMemory) {
-				return RetBig;
+			classify_recursive(t, pi, &total_offset);
+			if (pi[0] == PassInMemory || pi[1] == PassInMemory) {
+				return ArgBig;
 			}
 
-			return RetSmallAggregate;
+			switch(pi[0]) {
+			case PassInInt:
+				if (sz <= 8) {
+					return ArgSmallAggr_Int;
+				}
+				switch(pi[1]) {
+				case PassInInt: return ArgSmallAggr_Int_Int;
+				case PassInSSE: return ArgSmallAggr_Int_Flt;
+				default:
+					die("Impossible return from classify_recursive");
+					break;
+				}
+				break;
+			case PassInSSE:
+				if (sz <= 8) {
+					return ArgSmallAggr_Flt;
+				}
+				switch(pi[1]) {
+				case PassInInt: return ArgSmallAggr_Flt_Int;
+				case PassInSSE: return ArgSmallAggr_Flt_Flt;
+				default:
+					die("Impossible return from classify_recursive");
+					break;
+				}
+				break;
+			default:
+				die("Impossible return from classify_recursive");
+				break;
+			}
 		}
 
-		return RetBig;
+		return ArgBig;
 	}
 
-	return RetReg;
+	return ArgReg;
 }
