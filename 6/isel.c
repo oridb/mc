@@ -611,34 +611,18 @@ placearg(Isel *s, Node *argn, Loc *argloc, PassIn p, Loc *rsp, int vararg, size_
 static int
 sufficientregs(ArgType a, size_t nfloats, size_t nints)
 {
-	size_t needed_ints = 0;
-	size_t needed_flts = 0;
+	static const struct {
+		int ireg;
+		int freg;
+	} needed[] = {
+	[ArgAggrI]   = {1, 0},
+	[ArgAggrFI]  = {1, 1},
+	[ArgAggrIF]  = {1, 1},
+	[ArgAggrII]  = {2, 0},
+	[ArgAggrFF]  = {0, 2},
+	};
 
-	switch(a) {
-	case ArgSmallAggr_Int:
-	case ArgSmallAggr_Flt_Int:
-	case ArgSmallAggr_Int_Flt:
-		needed_ints = 1;
-		break;
-	case ArgSmallAggr_Int_Int:
-		needed_ints = 2;
-		break;
-	default: break;
-	}
-
-	switch(a) {
-	case ArgSmallAggr_Flt:
-	case ArgSmallAggr_Flt_Int:
-	case ArgSmallAggr_Int_Flt:
-		needed_flts = 1;
-		break;
-	case ArgSmallAggr_Flt_Flt:
-		needed_flts = 2;
-		break;
-	default: break;
-	}
-
-	return (needed_flts + nfloats <= Nfloatregargs) && (needed_ints + nints <= Nintregargs);
+	return (needed[a].freg + nfloats <= Nfloatregargs) && (needed[a].ireg + nints <= Nintregargs);
 }
 
 static Loc *
@@ -661,7 +645,7 @@ gencall(Isel *s, Node *n)
 	size_t nfloats, nints;
 	Loc *retloc1, *retloc2, *rsp;	/* hard-coded registers */
 	Loc *ret;
-	size_t nextintretreg = 0, nextfltretreg = 0;
+	size_t ri, rf;
 	Loc *stkbump;	/* calculated stack offset */
 	Type *t, *fn;
 	Node **args;
@@ -673,6 +657,8 @@ gencall(Isel *s, Node *n)
 	rsp = locphysreg(Rrsp);
 
 	t = exprtype(n);
+	ri = 0;
+	rf = 0;
 	retloc1 = NULL;
 	retloc2 = NULL;
 	rettype = classify(t);
@@ -682,33 +668,29 @@ gencall(Isel *s, Node *n)
 	case ArgBig:
 		break;
 	case ArgReg:
-		if (istyfloat(t)) {
-			retloc1 = coreg(Rxmm0d, mode(n));
-		} else {
-			retloc1 = coreg(Rrax, mode(n));
-		}
+		retloc1 = coreg((istyfloat(t)) ?  Rxmm0d : Rrax, mode(n));
 		break;
-	case ArgSmallAggr_Int:
-		retloc1 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 0));
+	case ArgAggrI:
+		retloc1 = coreg(intretregs[ri++], tymodepart(t, 0, 0));
 		break;
-	case ArgSmallAggr_Flt:
-		retloc1 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 0));
+	case ArgAggrF:
+		retloc1 = coreg(fltretregs[rf++], tymodepart(t, 1, 0));
 		break;
-	case ArgSmallAggr_Int_Int:
-		retloc1 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 0));
-		retloc2 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 8));
+	case ArgAggrII:
+		retloc1 = coreg(intretregs[ri++], tymodepart(t, 0, 0));
+		retloc2 = coreg(intretregs[ri++], tymodepart(t, 0, 8));
 		break;
-	case ArgSmallAggr_Int_Flt:
-		retloc1 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 0));
-		retloc2 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 8));
+	case ArgAggrIF:
+		retloc1 = coreg(intretregs[ri++], tymodepart(t, 0, 0));
+		retloc2 = coreg(fltretregs[rf++], tymodepart(t, 1, 8));
 		break;
-	case ArgSmallAggr_Flt_Int:
-		retloc1 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 0));
-		retloc2 = coreg(intretregs[nextintretreg++], tymodepart(t, 0, 8));
+	case ArgAggrFI:
+		retloc1 = coreg(fltretregs[rf++], tymodepart(t, 1, 0));
+		retloc2 = coreg(intretregs[ri++], tymodepart(t, 0, 8));
 		break;
-	case ArgSmallAggr_Flt_Flt:
-		retloc1 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 0));
-		retloc2 = coreg(fltretregs[nextfltretreg++], tymodepart(t, 1, 8));
+	case ArgAggrFF:
+		retloc1 = coreg(fltretregs[rf++], tymodepart(t, 1, 0));
+		retloc2 = coreg(fltretregs[rf++], tymodepart(t, 1, 8));
 		break;
 	}
 
@@ -785,25 +767,25 @@ gencall(Isel *s, Node *n)
 			/* placearg can figure this out */
 			placearg(s, args[i], arg, PassInNoPref, rsp, vararg, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Int:
+		case ArgAggrI:
 			placearg(s, args[i], arg, PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Flt:
+		case ArgAggrF:
 			placearg(s, args[i], arg, PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Int_Int:
+		case ArgAggrII:
 			placearg(s, args[i],          arg , PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
 			placearg(s, args[i], plus8(s, arg), PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Int_Flt:
+		case ArgAggrIF:
 			placearg(s, args[i],          arg , PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
 			placearg(s, args[i], plus8(s, arg), PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Flt_Int:
+		case ArgAggrFI:
 			placearg(s, args[i],          arg , PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
 			placearg(s, args[i], plus8(s, arg), PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Flt_Flt:
+		case ArgAggrFF:
 			placearg(s, args[i],          arg , PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
 			placearg(s, args[i], plus8(s, arg), PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
 			break;
@@ -830,25 +812,25 @@ gencall(Isel *s, Node *n)
 		else
 			g(s, Imov, retloc1, ret, NULL);
 		break;
-	case ArgSmallAggr_Int:
+	case ArgAggrI:
 		g(s, Imov, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
 		break;
-	case ArgSmallAggr_Flt:
+	case ArgAggrF:
 		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
 		break;
-	case ArgSmallAggr_Int_Int:
+	case ArgAggrII:
 		g(s, Imov, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
 		g(s, Imov, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
 		break;
-	case ArgSmallAggr_Int_Flt:
+	case ArgAggrIF:
 		g(s, Imov,  retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
 		g(s, Imovs, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
 		break;
-	case ArgSmallAggr_Flt_Int:
+	case ArgAggrFI:
 		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
 		g(s, Imov,  retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
 		break;
-	case ArgSmallAggr_Flt_Flt:
+	case ArgAggrFF:
 		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
 		g(s, Imovs, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
 		break;
@@ -1307,30 +1289,30 @@ addarglocs(Isel *s, Func *fn)
 			/* retrievearg can figure this out */
 			retrievearg(s, arg, vararg, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Int:
+		case ArgAggrI:
 			l = loc(s, arg);
 			movearg(s, l, PassInInt, ModeQ, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Flt:
+		case ArgAggrF:
 			l = loc(s, arg);
 			movearg(s, l, PassInSSE, ModeD, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Int_Int:
+		case ArgAggrII:
 			l = loc(s, arg);
 			movearg(s,          l , PassInInt, ModeQ, &nfloats, &nints, &argoff);
 			movearg(s, plus8(s, l), PassInInt, ModeQ, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Int_Flt:
+		case ArgAggrIF:
 			l = loc(s, arg);
 			movearg(s,          l , PassInInt, ModeQ, &nfloats, &nints, &argoff);
 			movearg(s, plus8(s, l), PassInSSE, ModeD, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Flt_Int:
+		case ArgAggrFI:
 			l = loc(s, arg);
 			movearg(s,          l , PassInSSE, ModeD, &nfloats, &nints, &argoff);
 			movearg(s, plus8(s, l), PassInInt, ModeQ, &nfloats, &nints, &argoff);
 			break;
-		case ArgSmallAggr_Flt_Flt:
+		case ArgAggrFF:
 			l = loc(s, arg);
 			movearg(s,          l , PassInSSE, ModeD, &nfloats, &nints, &argoff);
 			movearg(s, plus8(s, l), PassInSSE, ModeD, &nfloats, &nints, &argoff);
@@ -1378,12 +1360,13 @@ epilogue(Isel *s)
 	Loc *rsp, *rbp;
 	Loc *ret;
 	size_t i;
-	size_t nextintretreg = 0, nextfltretreg = 0;
+	size_t ri = 0, rf = 0;
 
 	rsp = locphysreg(Rrsp);
 	rbp = locphysreg(Rrbp);
 	switch (s->rettype) {
-	case ArgVoid: break;
+	case ArgVoid:
+		break;
 	case ArgReg:
 		/* s->ret is a value, and will be returned that way */
 		ret = loc(s, s->ret);
@@ -1397,45 +1380,43 @@ epilogue(Isel *s)
 		ret = loc(s, s->ret);
 		g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
 		break;
-	case ArgSmallAggr_Int:
+	case ArgAggrI:
 		/* s->ret is an address, and will be returned as values */
 		ret = loc(s, s->ret);
-		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
 		break;
-	case ArgSmallAggr_Flt:
+	case ArgAggrF:
 		ret = loc(s, s->ret);
-		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
 		break;
-	case ArgSmallAggr_Int_Int:
+	case ArgAggrII:
 		ret = loc(s, s->ret);
-		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
-		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
+		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
 		break;
-	case ArgSmallAggr_Int_Flt:
+	case ArgAggrIF:
 		ret = loc(s, s->ret);
-		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
-		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
+		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
 		break;
-	case ArgSmallAggr_Flt_Int:
+	case ArgAggrFI:
 		ret = loc(s, s->ret);
-		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
-		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[nextintretreg++], ModeQ));
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
+		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
 		break;
-	case ArgSmallAggr_Flt_Flt:
+	case ArgAggrFF:
 		ret = loc(s, s->ret);
-		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
-		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[nextfltretreg++], ModeD));
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
+		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
 		break;
 	}
 
 	/* restore registers */
-	for (i = 0; savedregs[i] != Rnone; i++) {
-		if (isfloatmode(s->calleesave[i]->mode)) {
+	for (i = 0; savedregs[i] != Rnone; i++)
+		if (isfloatmode(s->calleesave[i]->mode))
 			g(s, Imovs, s->calleesave[i], locphysreg(savedregs[i]), NULL);
-		} else {
+		else
 			g(s, Imov, s->calleesave[i], locphysreg(savedregs[i]), NULL);
-		}
-	}
 	/* leave function */
 	g(s, Imov, rbp, rsp, NULL);
 	g(s, Ipop, rbp, NULL);
@@ -1490,16 +1471,16 @@ handlesmallstructargs(Isel *is, Func *fn)
 		case ArgBig:
 			/* No need for any extra space for this arg */
 			break;
-		case ArgSmallAggr_Int:
-		case ArgSmallAggr_Flt:
+		case ArgAggrI:
+		case ArgAggrF:
 			fn->stksz += 8;
 			fn->stksz = align(fn->stksz, min(8, Ptrsz));
 			htput(fn->stkoff, fn->args[i], itop(fn->stksz));
 			break;
-		case ArgSmallAggr_Int_Int:
-		case ArgSmallAggr_Int_Flt:
-		case ArgSmallAggr_Flt_Int:
-		case ArgSmallAggr_Flt_Flt:
+		case ArgAggrII:
+		case ArgAggrIF:
+		case ArgAggrFI:
+		case ArgAggrFF:
 			fn->stksz += 16;
 			fn->stksz = align(fn->stksz, min(16, Ptrsz));
 			htput(fn->stkoff, fn->args[i], itop(fn->stksz));

@@ -560,11 +560,11 @@ classify(Type *t)
 			switch(pi[0]) {
 			case PassInInt:
 				if (sz <= 8) {
-					return ArgSmallAggr_Int;
+					return ArgAggrI;
 				}
 				switch(pi[1]) {
-				case PassInInt: return ArgSmallAggr_Int_Int;
-				case PassInSSE: return ArgSmallAggr_Int_Flt;
+				case PassInInt: return ArgAggrII;
+				case PassInSSE: return ArgAggrIF;
 				default:
 					die("Impossible return from classify_recursive");
 					break;
@@ -572,11 +572,11 @@ classify(Type *t)
 				break;
 			case PassInSSE:
 				if (sz <= 8) {
-					return ArgSmallAggr_Flt;
+					return ArgAggrF;
 				}
 				switch(pi[1]) {
-				case PassInInt: return ArgSmallAggr_Flt_Int;
-				case PassInSSE: return ArgSmallAggr_Flt_Flt;
+				case PassInInt: return ArgAggrFI;
+				case PassInSSE: return ArgAggrFF;
 				default:
 					die("Impossible return from classify_recursive");
 					break;

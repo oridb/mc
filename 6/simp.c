@@ -1095,12 +1095,12 @@ simpcall(Simp *s, Node *n, Node *dst)
 	case ArgVoid:
 		break;
 	case ArgBig:
-	case ArgSmallAggr_Int:
-	case ArgSmallAggr_Flt:
-	case ArgSmallAggr_Int_Int:
-	case ArgSmallAggr_Int_Flt:
-	case ArgSmallAggr_Flt_Int:
-	case ArgSmallAggr_Flt_Flt:
+	case ArgAggrI:
+	case ArgAggrF:
+	case ArgAggrII:
+	case ArgAggrIF:
+	case ArgAggrFI:
+	case ArgAggrFF:
 		lappend(&args, &nargs, addr(s, r, exprtype(n)));
 		break;
 	case ArgReg:
@@ -1252,16 +1252,16 @@ rval(Simp *s, Node *n, Node *dst)
 		/*
 		 * Compute and put the correct value into s->ret. In the case of ArgBig
 		 * and ArgReg, exfiltrate the value from the function. In the case of
-		 * ArgSmallAggr_XYZ, put a pointer to the value where the function
+		 * ArgAggr_XYZ, put a pointer to the value where the function
 		 * epilogue can access it.
 		 */
 		switch (s->rettype) {
-		case ArgSmallAggr_Int:
-		case ArgSmallAggr_Flt:
-		case ArgSmallAggr_Int_Int:
-		case ArgSmallAggr_Int_Flt:
-		case ArgSmallAggr_Flt_Int:
-		case ArgSmallAggr_Flt_Flt:
+		case ArgAggrI:
+		case ArgAggrF:
+		case ArgAggrII:
+		case ArgAggrIF:
+		case ArgAggrFI:
+		case ArgAggrFF:
 			t = s->ret;
 			u = rval(s, args[0], NULL);
 			u = addr(s, u, exprtype(args[0]));
@@ -1412,12 +1412,12 @@ simpinit(Simp *s, Node *f)
 	switch(s->rettype) {
 	case ArgVoid:
 		break;
-	case ArgSmallAggr_Int:
-	case ArgSmallAggr_Flt:
-	case ArgSmallAggr_Int_Int:
-	case ArgSmallAggr_Int_Flt:
-	case ArgSmallAggr_Flt_Int:
-	case ArgSmallAggr_Flt_Flt:
+	case ArgAggrI:
+	case ArgAggrF:
+	case ArgAggrII:
+	case ArgAggrIF:
+	case ArgAggrFI:
+	case ArgAggrFF:
 		s->ret = gentemp(f->loc, mktyptr(f->loc, ty), &dcl);
 		break;
 	case ArgBig:

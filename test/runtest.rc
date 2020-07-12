@@ -4,13 +4,13 @@ rfork e
 MYR_MC=`{cd .. ; pwd}^/6/6.out
 MYR_MUSE=`{cd .. ; pwd}^/muse/6.out
 fn build {
-	dir=`{echo $1 | grep '.*/'}
-	if(~ $dir '') {
+	dir=`{basename -d $1}
+	if(~ $dir '.') {
 		rm -f $1 $1^.6 $1^.use
 		../obj/mbld/mbld -Bnone -o 'out' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.6 $1^.myr
 	}
 	if not {
-		target=`{echo $1 | grep -o '[^/]*$'}
+		target=`{basename $1}
 		top=`{pwd}
 		mkdir -p out/$dir
 		cd $dir
@@ -99,9 +99,10 @@ fn F {
 	cd $here
 }
 
+fn posixonly {
+	status=''
+}
+
 echo 'MTEST ' `{grep '^[BF]' tests | wc -l}
 
 . tests
-
-
-

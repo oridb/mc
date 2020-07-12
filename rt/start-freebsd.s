@@ -1,8 +1,14 @@
 .data
 /* sys.__cenvp : byte## */
+.globl environ
 .globl sys$__cenvp
+environ:
 sys$__cenvp:
-    .quad 0
+	.quad 0
+
+.globl __progname
+__progname:
+	.quad 0
 
 .globl thread$__tls
 thread$__tls:
@@ -25,6 +31,8 @@ _start:
 	/* load argc, argv, envp from stack */
 	movq	(%rdi),%rax		/* argc */
 	leaq	8(%rdi),%rbx		/* argv */
+	movq	(%rbx),%rcx		/* save progname */
+	movq	%rcx,__progname
 	leaq	16(%rdi,%rax,8),%rcx	/* envp = argv + 8*argc + 8 */
 
 	/* store envp for some syscalls to use without converting */

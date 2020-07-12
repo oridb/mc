@@ -54,13 +54,15 @@ typedef enum {
 
 typedef enum {
 	ArgVoid,
-	ArgReg, /* Either int or flt, depending on Loc* type */
-	ArgSmallAggr_Int,
-	ArgSmallAggr_Flt,
-	ArgSmallAggr_Int_Int,
-	ArgSmallAggr_Flt_Int,
-	ArgSmallAggr_Int_Flt,
-	ArgSmallAggr_Flt_Flt,
+	/* Either int or flt, depending on Loc* type */
+	ArgReg,
+	/* Small aggregates packed into registers */
+	ArgAggrI,
+	ArgAggrF,
+	ArgAggrII,
+	ArgAggrFI,
+	ArgAggrIF,
+	ArgAggrFF,
 	ArgBig,
 } ArgType;
 
