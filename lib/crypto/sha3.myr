@@ -187,13 +187,13 @@ const keccak = {x, data, blocksz, tail, msglen
 		std.slcp(tail[ntail:ntail + n], data[:n])
 		data = data[n:]
 		if n + ntail < blocksz
-			-> n + ntail
+			-> len
 		;;
 		addblock(x, tail)
 		keccakf(x)
 	;;
 	while data.len >= blocksz
-		addblock(x, data)
+		addblock(x, data[:blocksz])
 		keccakf(x)
 		data = data[blocksz:]
 	;;

@@ -113,5 +113,98 @@ const main = {
 					"\x4B\x5C\xBF\x78\x28\x65\x8E\x6A"), \
 				"invalid hash result {r}", ret[:])
 		}],
+
+		[.name="keccak224multiadd", .fn = keccak224multiadd],
+		[.name="keccak256multiadd", .fn = keccak256multiadd],
+		[.name="keccak384multiadd", .fn = keccak384multiadd],
+		[.name="keccak512multiadd", .fn = keccak512multiadd],
 	][:])
+}
+
+const toadd = [
+	[ "", "", "", "", "" ][:],
+	[ "a", "b" ][:],
+
+	/* Hover around the blocksz mark */
+	[ "a seventy-one byte string to make keccak-512 touch the limit (blocksz).", "" ][:],
+	[ "a seventy-one byte string to make keccak-512 touch the limit (blocksz).", "_" ][:],
+	[ "a seventy-one byte string to make keccak-512 touch the limit (blocksz).", "_", "_" ][:],
+	[ "a seventy-one byte string to make keccak-512 touch the limit (blocksz).", "__" ][:],
+
+	/* Go between blocksz and blocksz + 4 to stress addblock */
+	[ "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, ",
+	  "I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. ",
+	  "Whenever I find myself growing grim about the mouth; whenever it is a damp, drizzly November in my soul;", ][:],
+][:]
+
+const keccak224multiadd = {c
+	for l : toadd
+		var st : crypto.keccak224
+		crypto.keccak224init(&st)
+
+		var merged : std.strbuf# = std.mksb()
+		for data : l
+			std.sbputs(merged, data)
+			crypto.keccak224add(&st, data)
+		;;
+
+		var hm = crypto.keccak224(std.sbfin(merged))
+		var hi = crypto.keccak224fin(&st)
+
+		testr.check(c, std.sleq(hm[0:28], hi[0:28]), "incremental keccak224 disagrees with all-at-once")
+	;;
+}
+
+const keccak256multiadd = {c
+	for l : toadd
+		var st : crypto.keccak256
+		crypto.keccak256init(&st)
+
+		var merged : std.strbuf# = std.mksb()
+		for data : l
+			std.sbputs(merged, data)
+			crypto.keccak256add(&st, data)
+		;;
+
+		var hm = crypto.keccak256(std.sbfin(merged))
+		var hi = crypto.keccak256fin(&st)
+
+		testr.check(c, std.sleq(hm[0:32], hi[0:32]), "incremental keccak256 disagrees with all-at-once")
+	;;
+}
+
+const keccak384multiadd = {c
+	for l : toadd
+		var st : crypto.keccak384
+		crypto.keccak384init(&st)
+
+		var merged : std.strbuf# = std.mksb()
+		for data : l
+			std.sbputs(merged, data)
+			crypto.keccak384add(&st, data)
+		;;
+
+		var hm = crypto.keccak384(std.sbfin(merged))
+		var hi = crypto.keccak384fin(&st)
+
+		testr.check(c, std.sleq(hm[0:48], hi[0:48]), "incremental keccak384 disagrees with all-at-once")
+	;;
+}
+
+const keccak512multiadd = {c
+	for l : toadd
+		var st : crypto.keccak512
+		crypto.keccak512init(&st)
+
+		var merged : std.strbuf# = std.mksb()
+		for data : l
+			std.sbputs(merged, data)
+			crypto.keccak512add(&st, data)
+		;;
+
+		var hm = crypto.keccak512(std.sbfin(merged))
+		var hi = crypto.keccak512fin(&st)
+
+		testr.check(c, std.sleq(hm[0:64], hi[0:64]), "incremental keccak512 disagrees with all-at-once")
+	;;
 }
