@@ -1,4 +1,4 @@
-#define Abiversion 22
+#define Abiversion 23
 
 typedef struct Srcloc Srcloc;
 typedef struct Tysubst Tysubst;

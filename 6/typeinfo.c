@@ -331,7 +331,7 @@ tyalign(Type *ty)
 		break;
 	case Tytuple:
 		for (i = 0; i < ty->nsub; i++)
-			align = max(align, tyalign(ty->sub[0]));
+			align = max(align, tyalign(ty->sub[i]));
 		break;
 	case Tyunion:
 		align = 4;
@@ -408,3 +408,188 @@ offset(Node *aggr, Node *memb)
 	return tyoffset(exprtype(aggr), memb);
 }
 
+size_t
+countargs(Type *t)
+{
+	size_t nargs;
+
+	t = tybase(t);
+	nargs = t->nsub - 1;
+	if (classify(t->sub[0]) == ArgBig)
+		nargs++;
+	/* valists are replaced with hidden type parameter,
+	 * which we want on the stack for ease of ABI */
+	if (tybase(t->sub[t->nsub - 1])->type == Tyvalist)
+		nargs--;
+	return nargs;
+}
+
+static void join_classification(PassIn *current, PassIn new)
+{
+	if (*current == PassInNoPref) {
+		*current = new;
+	} else if ((*current == PassInInt) || (new == PassInInt)) {
+		*current = PassInInt;
+	} else if (*current != new) {
+		*current = PassInMemory;
+	}
+}
+
+static void
+classify_recursive(Type *t, PassIn *p, size_t *total_offset)
+{
+	size_t i = 0, sz = tysize(t);
+	size_t cur_offset = *total_offset;
+	PassIn *cur = 0;
+
+	if (!t)
+		die("cannot pass empty type.");
+	if (cur_offset + sz > 16) {
+		p[0] = PassInMemory;
+		p[1] = PassInMemory;
+		return;
+	}
+	cur = &p[cur_offset / 8];
+
+	switch(t->type) {
+	case Tyvoid: break;
+	case Tybool:
+	case Tybyte:
+	case Tychar:
+	case Tyint:
+	case Tyint16:
+	case Tyint32:
+	case Tyint64:
+	case Tyint8:
+	case Typtr:
+	case Tyuint:
+	case Tyuint16:
+	case Tyuint32:
+	case Tyuint64:
+	case Tyuint8:
+		join_classification(cur, PassInInt);
+		break;
+	case Tyslice:
+		/* Slices are too myrddin-specific, they go on the stack. */
+		join_classification(&p[0], PassInMemory);
+		join_classification(&p[1], PassInMemory);
+		break;
+	case Tyflt32:
+	case Tyflt64:
+		join_classification(cur, PassInSSE);
+		break;
+	case Tyname:
+		classify_recursive(t->sub[0], p, total_offset);
+		break;
+	case Tybad:
+	case Tycode:
+	case Tyfunc:
+	case Tygeneric:
+	case Typaram:
+	case Tyunres:
+	case Tyvalist:
+	case Tyvar:
+	case Ntypes:
+		/* We shouldn't even be in this function */
+		join_classification(cur, PassInMemory);
+		break;
+	case Tytuple:
+		for (i = 0; i < t->nsub; ++i) {
+			*total_offset = alignto(*total_offset, t->sub[i]);
+			classify_recursive(t->sub[i], p, total_offset);
+		}
+		*total_offset = alignto(*total_offset, t);
+		break;
+	case Tystruct:
+		for (i = 0; i < t->nmemb; ++i) {
+			Type *fieldt = decltype(t->sdecls[i]);
+			*total_offset = alignto(*total_offset, fieldt);
+			classify_recursive(fieldt, p, total_offset);
+		}
+		*total_offset = alignto(*total_offset, t);
+		break;
+	case Tyunion:
+		/*
+		 * General enums are too complicated to interop with C, which is the only
+		 * reason for anything other than PassInMemory.
+		 */
+		if (isenum(t))
+			join_classification(cur, PassInInt);
+		else
+			join_classification(cur, PassInMemory);
+		break;
+	case Tyarray:
+		if (t->asize) {
+			t->asize = fold(t->asize, 1);
+			assert(exprop(t->asize) == Olit);
+			for (i = 0; i < t->asize->expr.args[0]->lit.intval; ++i) {
+				classify_recursive(t->sub[0], p, total_offset);
+			}
+		}
+	}
+
+	*total_offset = align(cur_offset + sz, tyalign(t));
+}
+
+int
+isaggregate(Type *t)
+{
+	t = tybase(t);
+	return (t->type == Tystruct || t->type == Tyarray || t->type == Tytuple ||
+		(t->type == Tyunion && !isenum(t)));
+}
+
+ArgType
+classify(Type *t)
+{
+	size_t sz = tysize(t);
+	size_t total_offset = 0;
+
+	/* p must be of length exactly 2 */
+	PassIn pi[2] = { PassInNoPref, PassInNoPref };
+
+	if (tybase(t)->type == Tyvoid) {
+		return ArgVoid;
+	} else if (isstacktype(t)) {
+		if (isaggregate(t) && sz <= 16) {
+			classify_recursive(t, pi, &total_offset);
+			if (pi[0] == PassInMemory || pi[1] == PassInMemory) {
+				return ArgBig;
+			}
+
+			switch(pi[0]) {
+			case PassInInt:
+				if (sz <= 8) {
+					return ArgAggrI;
+				}
+				switch(pi[1]) {
+				case PassInInt: return ArgAggrII;
+				case PassInSSE: return ArgAggrIF;
+				default:
+					die("Impossible return from classify_recursive");
+					break;
+				}
+				break;
+			case PassInSSE:
+				if (sz <= 8) {
+					return ArgAggrF;
+				}
+				switch(pi[1]) {
+				case PassInInt: return ArgAggrFI;
+				case PassInSSE: return ArgAggrFF;
+				default:
+					die("Impossible return from classify_recursive");
+					break;
+				}
+				break;
+			default:
+				die("Impossible return from classify_recursive");
+				break;
+			}
+		}
+
+		return ArgBig;
+	}
+
+	return ArgReg;
+}

@@ -46,6 +46,27 @@ typedef enum {
 } Mode;
 
 typedef enum {
+	PassInNoPref,
+	PassInSSE,
+	PassInInt,
+	PassInMemory,
+} PassIn;
+
+typedef enum {
+	ArgVoid,
+	/* Either int or flt, depending on Loc* type */
+	ArgReg,
+	/* Small aggregates packed into registers */
+	ArgAggrI,
+	ArgAggrF,
+	ArgAggrII,
+	ArgAggrFI,
+	ArgAggrIF,
+	ArgAggrFF,
+	ArgBig,
+} ArgType;
+
+typedef enum {
 	Classbad,
 	Classint,
 	Classflt,
@@ -141,6 +162,7 @@ struct Func {
 	Htab *envoff;	/* Loc* -> int envoff map */
 	size_t stksz;	/* stack size */
 	Node *ret;	/* return value */
+	ArgType rettype;	/* how to actually get ret out */
 
 	Cfg  *cfg;	/* flow graph */
 	char isexport;	/* is this exported from the asm? */
@@ -174,6 +196,7 @@ struct Isel {
 	Asmbb *curbb;
 
 	Node *ret;          /* we store the return into here */
+	ArgType rettype;    /* how ret actually gets out of the function */
 	Htab *spillslots;   /* reg id  => int stkoff */
 	Htab *reglocs;      /* decl id => Loc *reg */
 	Htab *stkoff;       /* decl id => int stkoff */
@@ -295,6 +318,8 @@ char *tydescid(char *buf, size_t bufsz, Type *ty);
 Loc *coreg(Reg r, Mode m);
 int isfloatmode(Mode m);
 int isintmode(Mode m);
+int issubreg(Loc *, Loc *);
+int dumbmov(Loc *, Loc *);
 
 /* emitting instructions */
 Insn *mkinsn(int op, ...);
@@ -314,6 +339,9 @@ size_t tyalign(Type *t);
 size_t size(Node *n);
 ssize_t tyoffset(Type *ty, Node *memb);
 ssize_t offset(Node *aggr, Node *memb);
+size_t countargs(Type *t);
+ArgType classify(Type *t);
+int isaggregate(Type *t);
 int stacknode(Node *n);
 int floatnode(Node *n);
 void breakhere();

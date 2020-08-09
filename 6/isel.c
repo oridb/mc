@@ -27,6 +27,10 @@ regid floatargregs[] = {
 	Rxmm4d, Rxmm5d, Rxmm6d, Rxmm7d,
 };
 regid intargregs[] = {Rrdi, Rrsi, Rrdx, Rrcx, Rr8, Rr9};
+#define Nfloatregrets 2
+#define Nintregrets 2
+regid fltretregs[] = {Rxmm0d, Rxmm1d};
+regid intretregs[] = {Rrax, Rrdx};
 
 /* used to decide which operator is appropriate
  * for implementing various conditional operators */
@@ -81,6 +85,48 @@ tymode(Type *t)
 		break;
 	}
 	return ModeNone;
+}
+
+static Mode tymodepart(Type *t, int is_float, size_t displacement)
+{
+	assert(isstacktype(t));
+	size_t sz = tysize(t);
+
+	if (is_float) {
+		switch(sz - displacement) {
+		case 4: return ModeF; break;
+		default: return ModeD; break;
+		}
+	} else {
+		switch(sz - displacement) {
+		case 1: return ModeB; break;
+		case 2: return ModeW; break;
+		case 4: return ModeL; break;
+		default: return ModeQ; break;
+		}
+	}
+}
+
+static Mode
+forcefltmode(Mode m)
+{
+	assert(m != ModeNone);
+	switch (m) {
+	case ModeQ: return ModeD;
+	case ModeD: return ModeD;
+	default: return ModeF;
+	}
+}
+
+static Mode
+forceintmode(Mode m)
+{
+	assert(m != ModeNone);
+	switch (m) {
+	case ModeD: return ModeQ;
+	case ModeF: return ModeL;
+	default: return m;
+	}
 }
 
 static Mode
@@ -500,65 +546,186 @@ call(Isel *s, Node *n)
 	g(s, op, f, NULL);
 }
 
-static size_t
-countargs(Type *t)
+static void
+placearg(Isel *s, Node *argn, Loc *argloc, PassIn p, Loc *rsp, int vararg, size_t *nfloats, size_t *nints, size_t *argoff)
 {
-	size_t nargs;
+	/*
+	   placearg may be called when argn is stored at argloc, but it may also
+	   be called when argloc is a small piece of argn, as in the case when
+	   small structs are being passed. In those circumstances, p is PassInSSE
+	   or PassInInt, and argn is irrelevant. Therefore, argn should not be
+	   relied on when p is PassInSSE or PassInInt.
+	 */
+	Loc *src, *dst;
+	size_t a;
 
-	t = tybase(t);
-	nargs = t->nsub - 1;
-	if (isstacktype(t->sub[0]))
-		nargs++;
-	/* valists are replaced with hidden type parameter,
-	 * which we want on the stack for ease of ABI */
-	if (tybase(t->sub[t->nsub - 1])->type == Tyvalist)
-		nargs--;
-	return nargs;
+	if (p == PassInNoPref) {
+		if (stacknode(argn)) {
+			p = PassInMemory;
+		} else if (!vararg && isfloatmode(argloc->mode) && *nfloats < Nfloatregargs) {
+			p = PassInSSE;
+		} else if (!vararg && isintmode(argloc->mode) && *nints < Nintregargs) {
+			p = PassInInt;
+		} else {
+			p = PassInMemory;
+		}
+	}
+
+	switch (p) {
+	case PassInMemory:
+		if (stacknode(argn)) {
+			src = locreg(ModeQ);
+			g(s, Ilea, argloc, src, NULL);
+			a = tyalign(exprtype(argn));
+			blit(s, rsp, src, *argoff, 0, size(argn), a);
+			*argoff += size(argn);
+		} else {
+			dst = locmem(*argoff, rsp, NULL, argloc->mode);
+			argloc = inri(s, argloc);
+			stor(s, argloc, dst);
+			*argoff += size(argn);
+		}
+		break;
+	case PassInSSE:
+		dst = coreg(floatargregs[*nfloats], forcefltmode(argloc->mode));
+		argloc = inri(s, argloc);
+		if (isfloatmode(argloc->mode)) {
+			g(s, Imovs, argloc, dst, NULL);
+		} else {
+			g(s, Imov, argloc, dst, NULL);
+		}
+		(*nfloats)++;
+		break;
+	case PassInInt:
+		dst = coreg(intargregs[*nints], forceintmode(argloc->mode));
+		argloc = inri(s, argloc);
+		g(s, Imov, argloc, dst, NULL);
+		(*nints)++;
+		break;
+	case PassInNoPref: /* impossible */
+		die("cannot determine how to pass arg");
+		break;
+	}
+}
+
+static int
+sufficientregs(ArgType a, size_t nfloats, size_t nints)
+{
+	static const struct {
+		int ireg;
+		int freg;
+	} needed[] = {
+	[ArgAggrI]   = {1, 0},
+	[ArgAggrFI]  = {1, 1},
+	[ArgAggrIF]  = {1, 1},
+	[ArgAggrII]  = {2, 0},
+	[ArgAggrFF]  = {0, 2},
+	};
+
+	return (needed[a].freg + nfloats <= Nfloatregargs) && (needed[a].ireg + nints <= Nintregargs);
 }
 
 static Loc *
+plus8(Isel *s, Loc *base)
+{
+	Loc *forcedreg = locreg(ModeQ);
+	if (base->type == Loclbl || (base->type == Locmeml && !base->mem.base)) {
+		forcedreg = loclitl(base->lbl);
+	} else {
+		g(s, Ilea, base, forcedreg, NULL);
+	}
+	return locmem(8, forcedreg, NULL, ModeQ);
+}
+
+static void
 gencall(Isel *s, Node *n)
 {
-	Loc *src, *dst, *arg;	/* values we reduced */
-	size_t argsz, argoff, nargs, vasplit;
+	Loc *arg;	/* values we reduced */
+	size_t argsz, argoff, nargs, falseargs, vasplit;
 	size_t nfloats, nints;
-	Loc *retloc, *rsp, *ret;	/* hard-coded registers */
+	Loc *retloc1, *retloc2, *rsp;	/* hard-coded registers */
+	Loc *ret;
+	size_t ri, rf;
 	Loc *stkbump;	/* calculated stack offset */
 	Type *t, *fn;
 	Node **args;
-	size_t i, a;
+	Node *retnode;
+	ArgType rettype;
+	size_t i;
 	int vararg;
 
 	rsp = locphysreg(Rrsp);
+
 	t = exprtype(n);
-	if (tybase(t)->type == Tyvoid || isstacktype(t)) {
-		retloc = NULL;
-		ret = NULL;
-	} else if (istyfloat(t)) {
-		retloc = coreg(Rxmm0d, mode(n));
-		ret = locreg(mode(n));
-	} else {
-		retloc = coreg(Rrax, mode(n));
-		ret = locreg(mode(n));
+	ri = 0;
+	rf = 0;
+	retloc1 = NULL;
+	retloc2 = NULL;
+	rettype = classify(t);
+
+	switch (rettype) {
+	case ArgVoid:
+	case ArgBig:
+		break;
+	case ArgReg:
+		retloc1 = coreg((istyfloat(t)) ?  Rxmm0d : Rrax, mode(n));
+		break;
+	case ArgAggrI:
+		retloc1 = coreg(intretregs[ri++], tymodepart(t, 0, 0));
+		break;
+	case ArgAggrF:
+		retloc1 = coreg(fltretregs[rf++], tymodepart(t, 1, 0));
+		break;
+	case ArgAggrII:
+		retloc1 = coreg(intretregs[ri++], tymodepart(t, 0, 0));
+		retloc2 = coreg(intretregs[ri++], tymodepart(t, 0, 8));
+		break;
+	case ArgAggrIF:
+		retloc1 = coreg(intretregs[ri++], tymodepart(t, 0, 0));
+		retloc2 = coreg(fltretregs[rf++], tymodepart(t, 1, 8));
+		break;
+	case ArgAggrFI:
+		retloc1 = coreg(fltretregs[rf++], tymodepart(t, 1, 0));
+		retloc2 = coreg(intretregs[ri++], tymodepart(t, 0, 8));
+		break;
+	case ArgAggrFF:
+		retloc1 = coreg(fltretregs[rf++], tymodepart(t, 1, 0));
+		retloc2 = coreg(fltretregs[rf++], tymodepart(t, 1, 8));
+		break;
 	}
+
 	fn = tybase(exprtype(n->expr.args[0]));
 	/* calculate the number of args we expect to see, adjust
 	 * for a hidden return argument. */
 	vasplit = countargs(fn);
 	argsz = 0;
-	if (exprop(n) == Ocall) {
-		args = &n->expr.args[1];
-		nargs = n->expr.nargs - 1;
-	} else {
-		args = &n->expr.args[2];
-		nargs = n->expr.nargs - 2;
+
+	/*
+	 * { the function itself, [optional environment], [optional return information], real arg 1, ... }
+	 */
+	falseargs = 1;
+	if (exprop(n) == Ocallind) {
+		falseargs++;
 	}
+	if (rettype != ArgVoid) {
+		retnode = n->expr.args[falseargs];
+		if (rettype != ArgBig) {
+			falseargs++;
+		}
+	}
+	args = &n->expr.args[falseargs];
+	nargs = n->expr.nargs - falseargs;
 	/* Have to calculate the amount to bump the stack
 	 * pointer by in one pass first, otherwise if we push
 	 * one at a time, we evaluate the args in reverse order.
 	 * Not good.
 	 *
-	 * Skip the first operand, since it's the function itself */
+	 * Skip the first operand, since it's the function itself
+	 *
+	 * Strictly speaking, we might waste a little space here,
+	 * since some of these args might actually get passed in
+	 * registers.
+	 */
 	for (i = 0; i < nargs; i++) {
 		argsz = align(argsz, min(size(args[i]), Ptrsz));
 		argsz += size(args[i]);
@@ -576,44 +743,98 @@ gencall(Isel *s, Node *n)
 	vararg = 0;
 	for (i = 0; i < nargs; i++) {
 		arg = selexpr(s, args[i]);
-		argoff = alignto(argoff, exprtype(args[i]));
+		t = exprtype(args[i]);
+		argoff = alignto(argoff, t);
+		ArgType a = ArgBig;
 		if (i >= vasplit)
 			vararg = 1;
 		else
 			argoff = align(argoff, 8);
-		if (stacknode(args[i])) {
-			src = locreg(ModeQ);
-			g(s, Ilea, arg, src, NULL);
-			a = tyalign(exprtype(args[i]));
-			blit(s, rsp, src, argoff, 0, size(args[i]), a);
-			argoff += size(args[i]);
-		} else if (!vararg && isfloatmode(arg->mode) && nfloats < Nfloatregargs) {
-			dst = coreg(floatargregs[nfloats], arg->mode);
-			arg = inri(s, arg);
-			g(s, Imovs, arg, dst, NULL);
-			nfloats++;
-		} else if (!vararg && isintmode(arg->mode) && nints < Nintregargs) {
-			dst = coreg(intargregs[nints], arg->mode);
-			arg = inri(s, arg);
-			g(s, Imov, arg, dst, NULL);
-			nints++;
-		} else {
-			dst = locmem(argoff, rsp, NULL, arg->mode);
-			arg = inri(s, arg);
-			stor(s, arg, dst);
-			argoff += size(args[i]);
+
+		if (!vararg) {
+			a = classify(t);
 		}
+
+		if (!sufficientregs(a, nfloats, nints)) {
+			a = ArgBig;
+		}
+
+		switch(a) {
+		case ArgVoid:
+			break;
+		case ArgReg:
+		case ArgBig:
+			/* placearg can figure this out */
+			placearg(s, args[i], arg, PassInNoPref, rsp, vararg, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrI:
+			placearg(s, args[i], arg, PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrF:
+			placearg(s, args[i], arg, PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrII:
+			placearg(s, args[i],          arg , PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
+			placearg(s, args[i], plus8(s, arg), PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrIF:
+			placearg(s, args[i],          arg , PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
+			placearg(s, args[i], plus8(s, arg), PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrFI:
+			placearg(s, args[i],          arg , PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
+			placearg(s, args[i], plus8(s, arg), PassInInt, rsp, vararg, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrFF:
+			placearg(s, args[i],          arg , PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
+			placearg(s, args[i], plus8(s, arg), PassInSSE, rsp, vararg, &nfloats, &nints, &argoff);
+			break;
+		}
+
 	}
 	call(s, n);
 	if (argsz)
 		g(s, Iadd, stkbump, rsp, NULL);
-	if (retloc) {
-		if (isfloatmode(retloc->mode))
-			g(s, Imovs, retloc, ret, NULL);
+
+	switch (rettype) {
+	case ArgVoid:
+	case ArgBig:
+		/*
+		 * No need to do anything. The return location, if any, was taken care of
+		 * as the hidden argument.
+		 */
+		break;
+	case ArgReg:
+		/* retnode is the actual thing we're storing in */
+		ret = varloc(s, retnode);
+		if (isfloatmode(retloc1->mode))
+			g(s, Imovs, retloc1, ret, NULL);
 		else
-			g(s, Imov, retloc, ret, NULL);
+			g(s, Imov, retloc1, ret, NULL);
+		break;
+	case ArgAggrI:
+		g(s, Imov, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		break;
+	case ArgAggrF:
+		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		break;
+	case ArgAggrII:
+		g(s, Imov, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		g(s, Imov, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		break;
+	case ArgAggrIF:
+		g(s, Imov,  retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		g(s, Imovs, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		break;
+	case ArgAggrFI:
+		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		g(s, Imov,  retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeQ), NULL);
+		break;
+	case ArgAggrFF:
+		g(s, Imovs, retloc1, locmem(0, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		g(s, Imovs, retloc2, locmem(8, inri(s, selexpr(s, retnode)), NULL, ModeD), NULL);
+		break;
 	}
-	return ret;
 }
 
 static Loc*
@@ -753,7 +974,7 @@ selexpr(Isel *s, Node *n)
 		if (mode(args[0]) == ModeF) {
 			a = locreg(ModeF);
 			b = loclit(1LL << (31), ModeF);
-			g(s, Imovs, r, a);
+			g(s, Imovs, r, a, NULL);
 		} else if (mode(args[0]) == ModeD) {
 			a = locreg(ModeQ);
 			b = loclit(1LL << 63, ModeQ);
@@ -851,7 +1072,7 @@ selexpr(Isel *s, Node *n)
 		break;
 	case Ocall:
 	case Ocallind:
-		r = gencall(s, n);
+		gencall(s, n);
 		break;
 	case Oret:
 		a = locstrlbl(s->cfg->end->lbls[0]);
@@ -982,6 +1203,51 @@ savedregs[] = {
 	Rnone
 };
 
+static void
+movearg(Isel *s, Loc *dst, PassIn p, Mode m, size_t *nfloats, size_t *nints, size_t *argoff)
+{
+	Loc *a;
+	assert(m != ModeNone);
+
+	switch(p) {
+	case PassInInt:
+		a = coreg(intargregs[*nints], forceintmode(m));
+		g(s, Imov, a, dst, NULL);
+		(*nints)++;
+		break;
+	case PassInSSE:
+		a = coreg(floatargregs[*nfloats], forcefltmode(m));
+		g(s, Imovs, a, dst, NULL);
+		(*nfloats)++;
+		break;
+	default: /* no need to move if on stack */
+		break;
+	}
+}
+
+static void
+retrievearg(Isel *s, Node *argn, int vararg, size_t *nfloats, size_t *nints, size_t *argoff)
+{
+	Loc *l;
+
+	if (stacknode(argn)) {
+		htput(s->stkoff, argn, itop(-(*argoff + 2*Ptrsz)));
+		*argoff += size(argn);
+	} else if (!vararg && isfloatmode(mode(argn)) && *nfloats < Nfloatregargs) {
+		l = loc(s, argn);
+		movearg(s, l, PassInSSE, forcefltmode(mode(argn)), nfloats, nints, argoff);
+		htput(s->reglocs, argn, l);
+	} else if (!vararg && isintmode(mode(argn)) && *nints < Nintregargs) {
+		l = loc(s, argn);
+		movearg(s, l, PassInInt, forceintmode(mode(argn)), nfloats, nints, argoff);
+		htput(s->reglocs, argn, l);
+	} else if (tybase(decltype(argn))->type != Tyvoid) {
+		/* varargs go on the stack */
+		htput(s->stkoff, argn, itop(-(*argoff + 2*Ptrsz)));
+		*argoff += size(argn);
+	}
+}
+
 void
 addarglocs(Isel *s, Func *fn)
 {
@@ -989,7 +1255,7 @@ addarglocs(Isel *s, Func *fn)
 	size_t argoff;
 	int vararg;
 	Node *arg;
-	Loc *a, *l;
+	Type *t;
 
 	argoff = 0;
 	nfloats = 0;
@@ -998,30 +1264,59 @@ addarglocs(Isel *s, Func *fn)
 	nargs = countargs(fn->type);
 	for (i = 0; i < fn->nargs; i++) {
 		arg = fn->args[i];
-		argoff = alignto(argoff, decltype(arg));
+		t = decltype(arg);
+		argoff = alignto(argoff, t);
+		ArgType a = ArgBig;
+		Loc *l = NULL;
 		if (i >= nargs)
 			vararg = 1;
 		else
 			argoff = align(argoff, 8);
-		if (stacknode(arg)) {
-			htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
-			argoff += size(arg);
-		} else if (!vararg && isfloatmode(mode(arg)) && nfloats < Nfloatregargs) {
-			a = coreg(floatargregs[nfloats], mode(arg));
+
+		if (!vararg) {
+			a = classify(t);
+		}
+
+		if (!sufficientregs(a, nfloats, nints)) {
+			a = ArgBig;
+		}
+
+		switch(a) {
+		case ArgVoid:
+			break;
+		case ArgReg:
+		case ArgBig:
+			/* retrievearg can figure this out */
+			retrievearg(s, arg, vararg, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrI:
 			l = loc(s, arg);
-			g(s, Imovs, a, l, NULL);
-			htput(s->reglocs, arg, l);
-			nfloats++;
-		} else if (!vararg && isintmode(mode(arg)) && nints < Nintregargs) {
-			a = coreg(intargregs[nints], mode(arg));
+			movearg(s, l, PassInInt, ModeQ, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrF:
 			l = loc(s, arg);
-			g(s, Imov, a, l, NULL);
-			htput(s->reglocs, arg, l);
-			nints++;
-		} else if (tybase(decltype(arg))->type != Tyvoid) {
-			/* varargs go on the stack */
-			htput(s->stkoff, arg, itop(-(argoff + 2*Ptrsz)));
-			argoff += size(arg);
+			movearg(s, l, PassInSSE, ModeD, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrII:
+			l = loc(s, arg);
+			movearg(s,          l , PassInInt, ModeQ, &nfloats, &nints, &argoff);
+			movearg(s, plus8(s, l), PassInInt, ModeQ, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrIF:
+			l = loc(s, arg);
+			movearg(s,          l , PassInInt, ModeQ, &nfloats, &nints, &argoff);
+			movearg(s, plus8(s, l), PassInSSE, ModeD, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrFI:
+			l = loc(s, arg);
+			movearg(s,          l , PassInSSE, ModeD, &nfloats, &nints, &argoff);
+			movearg(s, plus8(s, l), PassInInt, ModeQ, &nfloats, &nints, &argoff);
+			break;
+		case ArgAggrFF:
+			l = loc(s, arg);
+			movearg(s,          l , PassInSSE, ModeD, &nfloats, &nints, &argoff);
+			movearg(s, plus8(s, l), PassInSSE, ModeD, &nfloats, &nints, &argoff);
+			break;
 		}
 	}
 }
@@ -1065,24 +1360,63 @@ epilogue(Isel *s)
 	Loc *rsp, *rbp;
 	Loc *ret;
 	size_t i;
+	size_t ri = 0, rf = 0;
 
 	rsp = locphysreg(Rrsp);
 	rbp = locphysreg(Rrbp);
-	if (s->ret) {
+	switch (s->rettype) {
+	case ArgVoid:
+		break;
+	case ArgReg:
+		/* s->ret is a value, and will be returned that way */
 		ret = loc(s, s->ret);
 		if (istyfloat(exprtype(s->ret)))
 			g(s, Imovs, ret, coreg(Rxmm0d, ret->mode), NULL);
 		else
 			g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
+		break;
+	case ArgBig:
+		/* s->ret is an address, and will be returned that way */
+		ret = loc(s, s->ret);
+		g(s, Imov, ret, coreg(Rax, ret->mode), NULL);
+		break;
+	case ArgAggrI:
+		/* s->ret is an address, and will be returned as values */
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
+		break;
+	case ArgAggrF:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
+		break;
+	case ArgAggrII:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
+		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
+		break;
+	case ArgAggrIF:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
+		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
+		break;
+	case ArgAggrFI:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
+		load(s, locmem(8, ret, NULL, ModeQ), coreg(intretregs[ri++], ModeQ));
+		break;
+	case ArgAggrFF:
+		ret = loc(s, s->ret);
+		load(s, locmem(0, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
+		load(s, locmem(8, ret, NULL, ModeD), coreg(fltretregs[rf++], ModeD));
+		break;
 	}
+
 	/* restore registers */
-	for (i = 0; savedregs[i] != Rnone; i++) {
-		if (isfloatmode(s->calleesave[i]->mode)) {
+	for (i = 0; savedregs[i] != Rnone; i++)
+		if (isfloatmode(s->calleesave[i]->mode))
 			g(s, Imovs, s->calleesave[i], locphysreg(savedregs[i]), NULL);
-		} else {
+		else
 			g(s, Imov, s->calleesave[i], locphysreg(savedregs[i]), NULL);
-		}
-	}
 	/* leave function */
 	g(s, Imov, rbp, rsp, NULL);
 	g(s, Ipop, rbp, NULL);
@@ -1103,6 +1437,56 @@ mkasmbb(Bb *bb)
 	as->lbls = memdup(bb->lbls, bb->nlbls*sizeof(char*));
 	as->nlbls = bb->nlbls;
 	return as;
+}
+
+static void
+handlesmallstructargs(Isel *is, Func *fn)
+{
+	/*
+	 * Perform a last-minute adjustment to fn->stksz to handle small structs
+	 * that will be passed in registers. We do this inside selfunc so that
+	 * generics will be specialized.
+	 */
+	size_t vasplit = countargs(fn->type);
+	size_t i = 0;
+	Type *t;
+	Node *arg;
+
+	for (i = 0; i < fn->nargs; i++) {
+		arg = fn->args[i];
+		t = decltype(arg);
+		int vararg = 0;
+		ArgType a = ArgBig;
+
+		if (i >= vasplit)
+			vararg = 1;
+
+		if (!vararg) {
+			a = classify(t);
+		}
+
+		switch(a) {
+		case ArgVoid:
+		case ArgReg:
+		case ArgBig:
+			/* No need for any extra space for this arg */
+			break;
+		case ArgAggrI:
+		case ArgAggrF:
+			fn->stksz += 8;
+			fn->stksz = align(fn->stksz, min(8, Ptrsz));
+			htput(fn->stkoff, fn->args[i], itop(fn->stksz));
+			break;
+		case ArgAggrII:
+		case ArgAggrIF:
+		case ArgAggrFI:
+		case ArgAggrFF:
+			fn->stksz += 16;
+			fn->stksz = align(fn->stksz, min(16, Ptrsz));
+			htput(fn->stkoff, fn->args[i], itop(fn->stksz));
+			break;
+		}
+	}
 }
 
 void
@@ -1130,6 +1514,7 @@ selfunc(Isel *is, Func *fn, Htab *globls, Htab *strtab)
 		g(is, Iloc, locstrlbl(buf), NULL);
 	}
 
+	handlesmallstructargs(is, fn);
 	prologue(is, fn, fn->stksz);
 	lastline = -1;
 	for (j = 0; j < fn->cfg->nbb - 1; j++) {

@@ -1,11 +1,22 @@
 #!/bin/rc
 
 rfork e
-MYR_MC=../6/6.out
-MYR_MUSE=../muse/6.out
+MYR_MC=`{cd .. ; pwd}^/6/6.out
+MYR_MUSE=`{cd .. ; pwd}^/muse/6.out
 fn build {
-	rm -f $1 $1^.6 $1^.use
-	../obj/mbld/mbld -Bnone -o 'out' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.6 $1^.myr
+	dir=`{basename -d $1}
+	if(~ $dir '.') {
+		rm -f $1 $1^.6 $1^.use
+		../obj/mbld/mbld -Bnone -o 'out' -b $1 -I../obj/lib/std -I../obj/lib/sys -I../obj/lib/regex -r../rt/_myrrt.6 $1^.myr
+	}
+	if not {
+		target=`{basename $1}
+		top=`{pwd}
+		mkdir -p out/$dir
+		cd $dir
+		$top/../obj/mbld/mbld -Bnone -o $top/out/$dir -I$top/../obj/lib/std -I$top/../obj/lib/sys -I$top/../obj/lib/regex -r$top/../rt/_myrrt.o clean
+		$top/../obj/mbld/mbld -Bnone -o $top/out/$dir -I$top/../obj/lib/std -I$top/../obj/lib/sys -I$top/../obj/lib/regex -r$top/../rt/_myrrt.o :$target
+	}
 }
 
 fn pass {
@@ -62,7 +73,9 @@ fn B {
 	res=$1; shift
 
 	echo 'test' $test '<<{!'
+	here=`{pwd}
 	build $test
+	cd $here
 	switch($type) {
 	case E
 		expectstatus $test $res
@@ -77,16 +90,19 @@ fn B {
 
 fn F {
 	echo 'test ' ^ $1 '<<{!'
+	here=`{pwd}
 	@{ build $1 } >[2=1]
 	if (~ $status '')
 		fail $1
 	if not
 		pass $1
+	cd $here
+}
+
+fn posixonly {
+	status=''
 }
 
 echo 'MTEST ' `{grep '^[BF]' tests | wc -l}
 
 . tests
-
-
-

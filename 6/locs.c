@@ -176,6 +176,8 @@ loclit(long val, Mode m)
 Loc *
 coreg(Reg r, Mode m)
 {
+	assert(m != ModeNone);
+
 	Reg crtab[][Nmode + 1] = {
 		[Ral]  = {Rnone, Ral,  Rax,  Reax, Rrax},
 		[Rcl]  = {Rnone, Rcl,  Rcx,  Recx, Rrcx},

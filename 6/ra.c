@@ -156,6 +156,31 @@ rclass(Loc *l)
 	return Classbad;
 }
 
+int
+issubreg(Loc *a, Loc *b)
+{
+	if(a->type != Locreg || b->type != Locreg)
+		return 0;
+	if(a->reg.colour == Rnone || b->reg.colour == Rnone)
+		return 0;
+	return rclass(a) == rclass(b) && a->mode != b->mode;
+}
+
+int
+dumbmov(Loc *a, Loc *b)
+{
+	/*
+	 * moving a reg to itself is dumb,
+	 * but we generate a lot of these as part
+	 * of register coalescing.
+	 */
+	if (a->type != Locreg || b->type != Locreg)
+		return 0;
+	if (a->reg.colour == Rnone || b->reg.colour == Rnone)
+		return 0;
+	return a->reg.colour == b->reg.colour;
+}
+
 /* %esp, %ebp are not in the allocatable pool */
 static int
 isfixreg(Loc *l)

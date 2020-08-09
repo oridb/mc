@@ -35,8 +35,8 @@ Simp {
 	/* return handling */
 	Node *endlbl;
 	Node *ret;
+	ArgType rettype;
 	int hasenv;
-	int isbigret;
 
 	/* location handling */
 	Node **blobs;
@@ -1065,6 +1065,7 @@ simpcall(Simp *s, Node *n, Node *dst)
 	size_t i, nargs;
 	Node **args;
 	Type *ft;
+	ArgType rettype;
 	Op op;
 
 	/* NB: If we called rval() on a const function, we would end up with
@@ -1089,8 +1090,23 @@ simpcall(Simp *s, Node *n, Node *dst)
 		lappend(&args, &nargs, getenvptr(s, fn));
 	}
 
-	if (exprtype(n)->type != Tyvoid && isstacktype(exprtype(n)))
+	rettype = classify(exprtype(n));
+	switch (rettype) {
+	case ArgVoid:
+		break;
+	case ArgBig:
+	case ArgAggrI:
+	case ArgAggrF:
+	case ArgAggrII:
+	case ArgAggrIF:
+	case ArgAggrFI:
+	case ArgAggrFF:
 		lappend(&args, &nargs, addr(s, r, exprtype(n)));
+		break;
+	case ArgReg:
+		lappend(&args, &nargs, r);
+		break;
+	}
 
 	for (i = 1; i < n->expr.nargs; i++) {
 		if (i < ft->nsub && tybase(ft->sub[i])->type == Tyvalist)
@@ -1110,11 +1126,7 @@ simpcall(Simp *s, Node *n, Node *dst)
 
 	call = mkexprl(n->loc, op, args, nargs);
 	call->expr.type = exprtype(n);
-	if (r && !isstacktype(exprtype(n))) {
-		append(s, set(r, call));
-	} else {
-		append(s, call);
-	}
+	append(s, call);
 	return r;
 }
 
@@ -1237,20 +1249,40 @@ rval(Simp *s, Node *n, Node *dst)
 		fatal(n, "'_' may not be an rvalue");
 		break;
 	case Oret:
-		if (s->isbigret) {
+		/*
+		 * Compute and put the correct value into s->ret. In the case of ArgBig
+		 * and ArgReg, exfiltrate the value from the function. In the case of
+		 * ArgAggr_XYZ, put a pointer to the value where the function
+		 * epilogue can access it.
+		 */
+		switch (s->rettype) {
+		case ArgAggrI:
+		case ArgAggrF:
+		case ArgAggrII:
+		case ArgAggrIF:
+		case ArgAggrFI:
+		case ArgAggrFF:
+			t = s->ret;
+			u = rval(s, args[0], NULL);
+			u = addr(s, u, exprtype(args[0]));
+			v = set(t, u);
+			append(s, v);
+		case ArgBig:
 			t = rval(s, args[0], NULL);
 			t = addr(s, t, exprtype(args[0]));
 			u = disp(n->loc, size(args[0]));
 			v = mkexpr(n->loc, Oblit, s->ret, t, u, NULL);
 			append(s, v);
-		} else {
+			break;
+		case ArgVoid:
+			rval(s, args[0], NULL);
+			break;
+		case ArgReg:
 			t = s->ret;
 			u = rval(s, args[0], NULL);
-			/* void calls return nothing */
-			if (t) {
-				t = set(t, u);
-				append(s, t);
-			}
+			t = set(t, u);
+			append(s, t);
+			break;
 		}
 		append(s, mkexpr(n->loc, Oret, NULL));
 		break;
@@ -1371,17 +1403,30 @@ simpinit(Simp *s, Node *f)
 	s->nstmts = 0;
 	s->stmts = NULL;
 	s->endlbl = genlbl(f->loc);
-	s->ret = NULL;
+	s->rettype = ArgVoid;
 
 	/* make a temp for the return type */
 	ty = f->func.type->sub[0];
-	if (isstacktype(ty)) {
-		s->isbigret = 1;
+	s->rettype = classify(ty);
+
+	switch(s->rettype) {
+	case ArgVoid:
+		break;
+	case ArgAggrI:
+	case ArgAggrF:
+	case ArgAggrII:
+	case ArgAggrIF:
+	case ArgAggrFI:
+	case ArgAggrFF:
+		s->ret = gentemp(f->loc, mktyptr(f->loc, ty), &dcl);
+		break;
+	case ArgBig:
 		s->ret = gentemp(f->loc, mktyptr(f->loc, ty), &dcl);
 		declarearg(s, dcl);
-	} else if (tybase(ty)->type != Tyvoid) {
-		s->isbigret = 0;
-		s->ret = gentemp(f->loc, ty, &dcl);
+		break;
+	case ArgReg:
+		s->ret = gentemp(f->loc, ty, NULL);
+		break;
 	}
 
 	for (i = 0; i < f->func.nargs; i++) {
@@ -1486,6 +1531,7 @@ simpfn(Simp *s, char *name, Node *dcl)
 	fn->stkoff = s->stkoff;
 	fn->envoff = s->envoff;
 	fn->ret = s->ret;
+	fn->rettype = s->rettype;
 	fn->args = s->args;
 	fn->nargs = s->nargs;
 	fn->cfg = cfg;

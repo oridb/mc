@@ -58,7 +58,7 @@ const vaenter = {ap
 	ty = vatype(ap)
 	match typedesc(ty)
 	| `Tyslice enc:	-> [.args=sliceptr(ap.args), .tc=[.nelt=slicelen(ap.args), .rem=enc, .isiter=false]]
-	| `Tytuple tc:	-> [.args=ap.args, .tc=tc]
+	| `Tytuple tc:	-> [.args=cursoralign(ap.args, ty), .tc=tc]
 	| `Tystruct tc:	-> [.args=cursoralign(ap.args, ty), .tc=tc]
 	| `Tyarray (sz, enc):	-> [.args=ap.args, .tc=[.nelt=sz, .rem=enc, .isiter=false]]
 	| `Tyname (name, enc):	-> [.args=ap.args, .tc=typeenccursor(enc)]
