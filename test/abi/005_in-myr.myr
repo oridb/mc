@@ -1,0 +1,330 @@
+use std
+use "005_types"
+
+pkg =
+    const fn_1_myr : (a1 : t2, a2 : uint32, a3 : t4, a4 : t2, a5 : (t5,uint8,t6), a6 : flt32, a7 : flt64, a8 : (t4,t3,flt32,t6) -> ((uint8,flt32,uint8,uint8),t3))
+    const fn_2_myr : (a1 : (flt64,t10,(t2,uint64,flt64)), a2 : (flt32,(flt64,uint32,uint64,t4)), a3 : (t5,uint8,t6), a4 : flt32, a5 : t15, a6 : (flt32,(flt64,uint32,uint64,t4)), a7 : uint8 -> (t16,flt32))
+    const fn_3_myr : (a1 : t15, a2 : t23, a3 : t21, a4 : uint8, a5 : uint8, a6 : (uint64,t24,t25,(uint64,uint64,uint8)) -> uint32)
+    const fn_4_myr : (a1 : ((t23,flt32,t6,flt64),(uint8,uint32)) -> uint64)
+    const fn_5_myr : (a1 : (t31,t32), a2 : (t32,uint8), a3 : (t35,uint8), a4 : t37, a5 : uint64 -> flt64)
+    const fn_6_myr : (a1 : t40, a2 : t41, a3 : (t32,uint8), a4 : t42, a5 : flt64, a6 : flt64, a7 : uint64, a8 : uint64, a9 : (uint64,uint64,uint8) -> t43)
+    const fn_7_myr : (a1 : t48 -> uint32)
+    const fn_8_myr : (a1 : (uint8,flt32,uint8,uint8), a2 : (flt32,t44,flt64,t49), a3 : t51, a4 : flt32, a5 : t52, a6 : uint32, a7 : t53, a8 : uint8 -> flt32)
+    const fn_9_myr : (a1 : t51, a2 : flt32, a3 : flt32, a4 : (t54,uint8,t55), a5 : t58, a6 : (t59,flt32,(flt64,flt32,uint64,uint64)), a7 : t65, a8 : t66, a9 : t67, a10 : flt64 -> uint64)
+    const fn_10_myr : (a1 : t74, a2 : flt32, a3 : t75, a4 : uint8, a5 : (uint64,t44,t76,t77), a6 : t79 -> flt32)
+;;
+
+const fn_1_myr = { a1 : t2, a2 : uint32, a3 : t4, a4 : t2, a5 : (t5,uint8,t6), a6 : flt32, a7 : flt64, a8 : (t4,t3,flt32,t6)
+    if !((a1.field_1==0.0625) && ((a1.field_2.0==112) && (a1.field_2.1==-0.625) && (a1.field_2.2==110) && (a1.field_2.3==44)))
+        goto bad
+    ;;
+
+    if !(a2==2189228706)
+        goto bad
+    ;;
+
+    if !(((a3.field_1.field_1==-0.84375) && ((a3.field_1.field_2.0==150) && (a3.field_1.field_2.1==0.359375) && (a3.field_1.field_2.2==172) && (a3.field_1.field_2.3==26))) && ((a3.field_2.field_1==241023379308544) && (a3.field_2.field_2==115) && ((a3.field_2.field_3.0==228) && (a3.field_2.field_3.1==0.65625) && (a3.field_2.field_3.2==247) && (a3.field_2.field_3.3==84))) && ((a3.field_3.field_1==3134223810560) && (a3.field_3.field_2==102) && ((a3.field_3.field_3.0==128) && (a3.field_3.field_3.1==-1.21875) && (a3.field_3.field_3.2==232) && (a3.field_3.field_3.3==105))))
+        goto bad
+    ;;
+
+    if !((a4.field_1==-1.203125) && ((a4.field_2.0==110) && (a4.field_2.1==0.6875) && (a4.field_2.2==119) && (a4.field_2.3==200)))
+        goto bad
+    ;;
+
+    if !(((a5.0.field_1==94503966736384) && (a5.0.field_2==2770153426) && (a5.0.field_3==187) && (a5.0.field_4==214) && (a5.0.field_5==213410253897728)) && (a5.1==164) && (a5.2==`E_6_2))
+        goto bad
+    ;;
+
+    if !(a6==1.53125)
+        goto bad
+    ;;
+
+    if !(a7==1.3984375)
+        goto bad
+    ;;
+
+    if !((((a8.0.field_1.field_1==0.578125) && ((a8.0.field_1.field_2.0==170) && (a8.0.field_1.field_2.1==1.09375) && (a8.0.field_1.field_2.2==193) && (a8.0.field_1.field_2.3==148))) && ((a8.0.field_2.field_1==271021012025344) && (a8.0.field_2.field_2==173) && ((a8.0.field_2.field_3.0==241) && (a8.0.field_2.field_3.1==1.46875) && (a8.0.field_2.field_3.2==80) && (a8.0.field_2.field_3.3==71))) && ((a8.0.field_3.field_1==86092233441280) && (a8.0.field_3.field_2==245) && ((a8.0.field_3.field_3.0==3) && (a8.0.field_3.field_3.1==-1.125) && (a8.0.field_3.field_3.2==183) && (a8.0.field_3.field_3.3==168)))) && ((a8.1.field_1==110146554691584) && (a8.1.field_2==246) && ((a8.1.field_3.0==164) && (a8.1.field_3.1==0.8125) && (a8.1.field_3.2==164) && (a8.1.field_3.3==89))) && (a8.2==0.28125) && (a8.3==`E_6_1))
+        goto bad
+    ;;
+
+    -> ((192,-1.296875,50,129),[.field_1=188458318561280,.field_2=40,.field_3=(47,0.359375,32,127)])
+
+:bad
+    -> ((228,-0.203125,117,231),[.field_1=162396161703936,.field_2=44,.field_3=(143,1.46875,35,52)])
+}
+
+const fn_2_myr = { a1 : (flt64,t10,(t2,uint64,flt64)), a2 : (flt32,(flt64,uint32,uint64,t4)), a3 : (t5,uint8,t6), a4 : flt32, a5 : t15, a6 : (flt32,(flt64,uint32,uint64,t4)), a7 : uint8
+    if !((a1.0==2.7734375) && ((a1.1.field_1==258260610842624) && (((a1.1.field_2.0.field_1==67688764407808) && (a1.1.field_2.0.field_2==122501974) && (a1.1.field_2.0.field_3==122) && (a1.1.field_2.0.field_4==53) && (a1.1.field_2.0.field_5==46816349519872)) && (a1.1.field_2.1==175) && (a1.1.field_2.2==`E_6_7)) && (((a1.1.field_3.0.0==242) && (a1.1.field_3.0.1==-0.828125) && (a1.1.field_3.0.2==64) && (a1.1.field_3.0.3==212)) && ((a1.1.field_3.1.field_1==175981577109504) && (a1.1.field_3.1.field_2==146) && ((a1.1.field_3.1.field_3.0==58) && (a1.1.field_3.1.field_3.1==-1.3125) && (a1.1.field_3.1.field_3.2==81) && (a1.1.field_3.1.field_3.3==249))))) && (((a1.2.0.field_1==-0.671875) && ((a1.2.0.field_2.0==39) && (a1.2.0.field_2.1==1.3125) && (a1.2.0.field_2.2==255) && (a1.2.0.field_2.3==168))) && (a1.2.1==5680861020160) && (a1.2.2==3.1015625)))
+        goto bad
+    ;;
+
+    if !((a2.0==-0.65625) && ((a2.1.0==-3.07421875) && (a2.1.1==2364459620) && (a2.1.2==34004063092736) && (((a2.1.3.field_1.field_1==0.734375) && ((a2.1.3.field_1.field_2.0==31) && (a2.1.3.field_1.field_2.1==-0.46875) && (a2.1.3.field_1.field_2.2==207) && (a2.1.3.field_1.field_2.3==112))) && ((a2.1.3.field_2.field_1==91868031090688) && (a2.1.3.field_2.field_2==24) && ((a2.1.3.field_2.field_3.0==152) && (a2.1.3.field_2.field_3.1==-0.796875) && (a2.1.3.field_2.field_3.2==24) && (a2.1.3.field_2.field_3.3==64))) && ((a2.1.3.field_3.field_1==74808418369536) && (a2.1.3.field_3.field_2==254) && ((a2.1.3.field_3.field_3.0==6) && (a2.1.3.field_3.field_3.1==0.046875) && (a2.1.3.field_3.field_3.2==73) && (a2.1.3.field_3.field_3.3==208))))))
+        goto bad
+    ;;
+
+    if !(((a3.0.field_1==145965008551936) && (a3.0.field_2==2498931774) && (a3.0.field_3==156) && (a3.0.field_4==179) && (a3.0.field_5==265737065725952)) && (a3.1==244) && (a3.2==`E_6_5))
+        goto bad
+    ;;
+
+    if !(a4==-0.796875)
+        goto bad
+    ;;
+
+    if !(a5==`E_15_4)
+        goto bad
+    ;;
+
+    if !((a6.0==0.6875) && ((a6.1.0==-2.171875) && (a6.1.1==1533036440) && (a6.1.2==12142327889920) && (((a6.1.3.field_1.field_1==-0.5625) && ((a6.1.3.field_1.field_2.0==243) && (a6.1.3.field_1.field_2.1==-0.65625) && (a6.1.3.field_1.field_2.2==106) && (a6.1.3.field_1.field_2.3==51))) && ((a6.1.3.field_2.field_1==156078303608832) && (a6.1.3.field_2.field_2==104) && ((a6.1.3.field_2.field_3.0==58) && (a6.1.3.field_2.field_3.1==-1.34375) && (a6.1.3.field_2.field_3.2==178) && (a6.1.3.field_2.field_3.3==10))) && ((a6.1.3.field_3.field_1==140200370896896) && (a6.1.3.field_3.field_2==33) && ((a6.1.3.field_3.field_3.0==143) && (a6.1.3.field_3.field_3.1==-1.3125) && (a6.1.3.field_3.field_3.2==190) && (a6.1.3.field_3.field_3.3==67))))))
+        goto bad
+    ;;
+
+    if !(a7==179)
+        goto bad
+    ;;
+
+    -> ([.field_1=101589888270336,.field_2=(225,-0.046875,234,74),.field_3=200069064425472,.field_4=1.53125],1.53125)
+
+:bad
+    -> ([.field_1=211711070699520,.field_2=(123,-1.203125,79,144),.field_3=242499850862592,.field_4=0.234375],0.28125)
+}
+
+const fn_3_myr = { a1 : t15, a2 : t23, a3 : t21, a4 : uint8, a5 : uint8, a6 : (uint64,t24,t25,(uint64,uint64,uint8))
+    if !(a1==`E_15_5)
+        goto bad
+    ;;
+
+    if !(((((a2.field_1.0.0.field_1==208514472345600) && ((a2.field_1.0.0.field_2.0==171) && (a2.field_1.0.0.field_2.1==0.53125) && (a2.field_1.0.0.field_2.2==170) && (a2.field_1.0.0.field_2.3==148)) && (a2.field_1.0.0.field_3==137775610724352) && (a2.field_1.0.0.field_4==0.046875)) && (a2.field_1.0.1==-0.109375)) && ((((a2.field_1.1.0.field_1.field_1==-0.515625) && ((a2.field_1.1.0.field_1.field_2.0==130) && (a2.field_1.1.0.field_1.field_2.1==0.5625) && (a2.field_1.1.0.field_1.field_2.2==65) && (a2.field_1.1.0.field_1.field_2.3==249))) && ((a2.field_1.1.0.field_2.field_1==49920772014080) && (a2.field_1.1.0.field_2.field_2==137) && ((a2.field_1.1.0.field_2.field_3.0==81) && (a2.field_1.1.0.field_2.field_3.1==-1.078125) && (a2.field_1.1.0.field_2.field_3.2==187) && (a2.field_1.1.0.field_2.field_3.3==244))) && ((a2.field_1.1.0.field_3.field_1==238917205884928) && (a2.field_1.1.0.field_3.field_2==234) && ((a2.field_1.1.0.field_3.field_3.0==148) && (a2.field_1.1.0.field_3.field_3.1==-0.65625) && (a2.field_1.1.0.field_3.field_3.2==148) && (a2.field_1.1.0.field_3.field_3.3==82)))) && ((a2.field_1.1.1.field_1==13348047552512) && (a2.field_1.1.1.field_2==206) && ((a2.field_1.1.1.field_3.0==236) && (a2.field_1.1.1.field_3.1==-0.390625) && (a2.field_1.1.1.field_3.2==159) && (a2.field_1.1.1.field_3.3==22))) && (a2.field_1.1.2==-1.203125) && (a2.field_1.1.3==`E_6_3)) && (a2.field_1.2==3263768112) && (((a2.field_1.3.field_1.field_1==0.890625) && ((a2.field_1.3.field_1.field_2.0==223) && (a2.field_1.3.field_1.field_2.1==-0.78125) && (a2.field_1.3.field_1.field_2.2==76) && (a2.field_1.3.field_1.field_2.3==85))) && ((a2.field_1.3.field_2.field_1==165112780685312) && (a2.field_1.3.field_2.field_2==206) && ((a2.field_1.3.field_2.field_3.0==4) && (a2.field_1.3.field_2.field_3.1==1.078125) && (a2.field_1.3.field_2.field_3.2==200) && (a2.field_1.3.field_2.field_3.3==49))) && ((a2.field_1.3.field_3.field_1==107450067189760) && (a2.field_1.3.field_3.field_2==25) && ((a2.field_1.3.field_3.field_3.0==89) && (a2.field_1.3.field_3.field_3.1==-1.203125) && (a2.field_1.3.field_3.field_3.2==14) && (a2.field_1.3.field_3.field_3.3==51))))) && (a2.field_2==`E_19_1) && (a2.field_3==178689565917184) && (a2.field_4==`E_20_4) && (a2.field_5==`E_21_6) && ((a2.field_6.0==269113953746944) && (a2.field_6.1==2315358406)))
+        goto bad
+    ;;
+
+    if !(a3==`E_21_9)
+        goto bad
+    ;;
+
+    if !(a4==248)
+        goto bad
+    ;;
+
+    if !(a5==86)
+        goto bad
+    ;;
+
+    if !((a6.0==85770339090432) && ((a6.1.field_1==-0.671875)) && ((a6.2.field_1==-1.15234375) && (a6.2.field_2==`E_20_1) && (a6.2.field_3==`E_21_1) && ((a6.2.field_4.0==0.46875) && ((a6.2.field_4.1.field_1==3865086263296) && (((a6.2.field_4.1.field_2.0.field_1==62745143410688) && (a6.2.field_4.1.field_2.0.field_2==444241798) && (a6.2.field_4.1.field_2.0.field_3==148) && (a6.2.field_4.1.field_2.0.field_4==38) && (a6.2.field_4.1.field_2.0.field_5==186451756843008)) && (a6.2.field_4.1.field_2.1==253) && (a6.2.field_4.1.field_2.2==`E_6_6)) && (((a6.2.field_4.1.field_3.0.0==106) && (a6.2.field_4.1.field_3.0.1==0.875) && (a6.2.field_4.1.field_3.0.2==169) && (a6.2.field_4.1.field_3.0.3==132)) && ((a6.2.field_4.1.field_3.1.field_1==193552010969088) && (a6.2.field_4.1.field_3.1.field_2==134) && ((a6.2.field_4.1.field_3.1.field_3.0==209) && (a6.2.field_4.1.field_3.1.field_3.1==0.390625) && (a6.2.field_4.1.field_3.1.field_3.2==6) && (a6.2.field_4.1.field_3.1.field_3.3==157))))) && (((a6.2.field_4.2.0.field_1==-1.015625) && ((a6.2.field_4.2.0.field_2.0==122) && (a6.2.field_4.2.0.field_2.1==1.40625) && (a6.2.field_4.2.0.field_2.2==38) && (a6.2.field_4.2.0.field_2.3==208))) && (a6.2.field_4.2.1==55544454578176) && (a6.2.field_4.2.2==-2.609375)))) && ((a6.3.0==33366908207104) && (a6.3.1==136001504280576) && (a6.3.2==132)))
+        goto bad
+    ;;
+
+    -> 2527618668
+
+:bad
+    -> 339855078
+}
+
+const fn_4_myr = { a1 : ((t23,flt32,t6,flt64),(uint8,uint32))
+    if !(((((((a1.0.0.field_1.0.0.field_1==44445459546112) && ((a1.0.0.field_1.0.0.field_2.0==83) && (a1.0.0.field_1.0.0.field_2.1==-0.453125) && (a1.0.0.field_1.0.0.field_2.2==82) && (a1.0.0.field_1.0.0.field_2.3==113)) && (a1.0.0.field_1.0.0.field_3==235939541549056) && (a1.0.0.field_1.0.0.field_4==1.078125)) && (a1.0.0.field_1.0.1==0.3125)) && ((((a1.0.0.field_1.1.0.field_1.field_1==-0.234375) && ((a1.0.0.field_1.1.0.field_1.field_2.0==236) && (a1.0.0.field_1.1.0.field_1.field_2.1==0.828125) && (a1.0.0.field_1.1.0.field_1.field_2.2==60) && (a1.0.0.field_1.1.0.field_1.field_2.3==26))) && ((a1.0.0.field_1.1.0.field_2.field_1==143671663132672) && (a1.0.0.field_1.1.0.field_2.field_2==50) && ((a1.0.0.field_1.1.0.field_2.field_3.0==243) && (a1.0.0.field_1.1.0.field_2.field_3.1==-0.796875) && (a1.0.0.field_1.1.0.field_2.field_3.2==3) && (a1.0.0.field_1.1.0.field_2.field_3.3==53))) && ((a1.0.0.field_1.1.0.field_3.field_1==214366877515776) && (a1.0.0.field_1.1.0.field_3.field_2==126) && ((a1.0.0.field_1.1.0.field_3.field_3.0==252) && (a1.0.0.field_1.1.0.field_3.field_3.1==1.453125) && (a1.0.0.field_1.1.0.field_3.field_3.2==128) && (a1.0.0.field_1.1.0.field_3.field_3.3==149)))) && ((a1.0.0.field_1.1.1.field_1==223779870998528) && (a1.0.0.field_1.1.1.field_2==137) && ((a1.0.0.field_1.1.1.field_3.0==203) && (a1.0.0.field_1.1.1.field_3.1==0.953125) && (a1.0.0.field_1.1.1.field_3.2==12) && (a1.0.0.field_1.1.1.field_3.3==243))) && (a1.0.0.field_1.1.2==1.453125) && (a1.0.0.field_1.1.3==`E_6_3)) && (a1.0.0.field_1.2==1314332054) && (((a1.0.0.field_1.3.field_1.field_1==-0.671875) && ((a1.0.0.field_1.3.field_1.field_2.0==209) && (a1.0.0.field_1.3.field_1.field_2.1==-1.125) && (a1.0.0.field_1.3.field_1.field_2.2==32) && (a1.0.0.field_1.3.field_1.field_2.3==106))) && ((a1.0.0.field_1.3.field_2.field_1==160715212455936) && (a1.0.0.field_1.3.field_2.field_2==12) && ((a1.0.0.field_1.3.field_2.field_3.0==45) && (a1.0.0.field_1.3.field_2.field_3.1==0.96875) && (a1.0.0.field_1.3.field_2.field_3.2==39) && (a1.0.0.field_1.3.field_2.field_3.3==176))) && ((a1.0.0.field_1.3.field_3.field_1==2142336450560) && (a1.0.0.field_1.3.field_3.field_2==26) && ((a1.0.0.field_1.3.field_3.field_3.0==239) && (a1.0.0.field_1.3.field_3.field_3.1==-1.5) && (a1.0.0.field_1.3.field_3.field_3.2==80) && (a1.0.0.field_1.3.field_3.field_3.3==178))))) && (a1.0.0.field_2==`E_19_5) && (a1.0.0.field_3==84526311014400) && (a1.0.0.field_4==`E_20_6) && (a1.0.0.field_5==`E_21_1) && ((a1.0.0.field_6.0==248535774265344) && (a1.0.0.field_6.1==1964811016))) && (a1.0.1==0.1875) && (a1.0.2==`E_6_5) && (a1.0.3==-1.87109375)) && ((a1.1.0==155) && (a1.1.1==2693759888)))
+        goto bad
+    ;;
+
+    -> 276275068796928
+
+:bad
+    -> 262674313510912
+}
+
+const fn_5_myr = { a1 : (t31,t32), a2 : (t32,uint8), a3 : (t35,uint8), a4 : t37, a5 : uint64
+    if !((a1.0==`E_31_3) && (a1.1==`E_32_5))
+        goto bad
+    ;;
+
+    if !((a2.0==`E_32_5) && (a2.1==66))
+        goto bad
+    ;;
+
+    if !((a3.0==`E_35_4) && (a3.1==214))
+        goto bad
+    ;;
+
+    if !(a4==`E_37_1)
+        goto bad
+    ;;
+
+    if !(a5==210077727850496)
+        goto bad
+    ;;
+
+    -> -2.5234375
+
+:bad
+    -> 1.40234375
+}
+
+const fn_6_myr = { a1 : t40, a2 : t41, a3 : (t32,uint8), a4 : t42, a5 : flt64, a6 : flt64, a7 : uint64, a8 : uint64, a9 : (uint64,uint64,uint8)
+    if !(((((a1.field_1.0.field_1.field_1==0.71875) && ((a1.field_1.0.field_1.field_2.0==162) && (a1.field_1.0.field_1.field_2.1==-1.375) && (a1.field_1.0.field_1.field_2.2==12) && (a1.field_1.0.field_1.field_2.3==208))) && ((a1.field_1.0.field_2.field_1==208257259929600) && (a1.field_1.0.field_2.field_2==224) && ((a1.field_1.0.field_2.field_3.0==202) && (a1.field_1.0.field_2.field_3.1==-0.015625) && (a1.field_1.0.field_2.field_3.2==86) && (a1.field_1.0.field_2.field_3.3==251))) && ((a1.field_1.0.field_3.field_1==253976550440960) && (a1.field_1.0.field_3.field_2==123) && ((a1.field_1.0.field_3.field_3.0==146) && (a1.field_1.0.field_3.field_3.1==0.828125) && (a1.field_1.0.field_3.field_3.2==120) && (a1.field_1.0.field_3.field_3.3==62)))) && ((a1.field_1.1.field_1==26298971062272) && (a1.field_1.1.field_2==103) && ((a1.field_1.1.field_3.0==239) && (a1.field_1.1.field_3.1==1.28125) && (a1.field_1.1.field_3.2==152) && (a1.field_1.1.field_3.3==89))) && (a1.field_1.2==0.734375) && (a1.field_1.3==`E_6_3)) && (a1.field_2==`E_6_1) && (a1.field_3==`E_38_6) && (((a1.field_4.field_1.0==152549047009280) && ((a1.field_4.field_1.1.field_1==0.859375)) && ((a1.field_4.field_1.2.field_1==-3.7109375) && (a1.field_4.field_1.2.field_2==`E_20_7) && (a1.field_4.field_1.2.field_3==`E_21_5) && ((a1.field_4.field_1.2.field_4.0==1.26171875) && ((a1.field_4.field_1.2.field_4.1.field_1==257906686427136) && (((a1.field_4.field_1.2.field_4.1.field_2.0.field_1==154973503488000) && (a1.field_4.field_1.2.field_4.1.field_2.0.field_2==2040012194) && (a1.field_4.field_1.2.field_4.1.field_2.0.field_3==167) && (a1.field_4.field_1.2.field_4.1.field_2.0.field_4==109) && (a1.field_4.field_1.2.field_4.1.field_2.0.field_5==74787062284288)) && (a1.field_4.field_1.2.field_4.1.field_2.1==39) && (a1.field_4.field_1.2.field_4.1.field_2.2==`E_6_6)) && (((a1.field_4.field_1.2.field_4.1.field_3.0.0==63) && (a1.field_4.field_1.2.field_4.1.field_3.0.1==-1.390625) && (a1.field_4.field_1.2.field_4.1.field_3.0.2==63) && (a1.field_4.field_1.2.field_4.1.field_3.0.3==209)) && ((a1.field_4.field_1.2.field_4.1.field_3.1.field_1==230983872282624) && (a1.field_4.field_1.2.field_4.1.field_3.1.field_2==184) && ((a1.field_4.field_1.2.field_4.1.field_3.1.field_3.0==15) && (a1.field_4.field_1.2.field_4.1.field_3.1.field_3.1==1.296875) && (a1.field_4.field_1.2.field_4.1.field_3.1.field_3.2==31) && (a1.field_4.field_1.2.field_4.1.field_3.1.field_3.3==255))))) && (((a1.field_4.field_1.2.field_4.2.0.field_1==1.015625) && ((a1.field_4.field_1.2.field_4.2.0.field_2.0==183) && (a1.field_4.field_1.2.field_4.2.0.field_2.1==-0.484375) && (a1.field_4.field_1.2.field_4.2.0.field_2.2==142) && (a1.field_4.field_1.2.field_4.2.0.field_2.3==16))) && (a1.field_4.field_1.2.field_4.2.1==137163913822208) && (a1.field_4.field_1.2.field_4.2.2==-2.80859375)))) && ((a1.field_4.field_1.3.0==170983975682048) && (a1.field_4.field_1.3.1==72796805398528) && (a1.field_4.field_1.3.2==42))) && (a1.field_4.field_2==1990287632) && ((a1.field_4.field_3.0==194) && (a1.field_4.field_3.1==3552591666)) && ((((a1.field_4.field_4.0.field_1.field_1==-0.375) && ((a1.field_4.field_4.0.field_1.field_2.0==79) && (a1.field_4.field_4.0.field_1.field_2.1==-0.625) && (a1.field_4.field_4.0.field_1.field_2.2==9) && (a1.field_4.field_4.0.field_1.field_2.3==188))) && ((a1.field_4.field_4.0.field_2.field_1==159828972142592) && (a1.field_4.field_4.0.field_2.field_2==48) && ((a1.field_4.field_4.0.field_2.field_3.0==128) && (a1.field_4.field_4.0.field_2.field_3.1==1.0) && (a1.field_4.field_4.0.field_2.field_3.2==62) && (a1.field_4.field_4.0.field_2.field_3.3==192))) && ((a1.field_4.field_4.0.field_3.field_1==179052505464832) && (a1.field_4.field_4.0.field_3.field_2==16) && ((a1.field_4.field_4.0.field_3.field_3.0==120) && (a1.field_4.field_4.0.field_3.field_3.1==0.625) && (a1.field_4.field_4.0.field_3.field_3.2==250) && (a1.field_4.field_4.0.field_3.field_3.3==151)))) && ((a1.field_4.field_4.1.field_1==196274257788928) && (a1.field_4.field_4.1.field_2==205) && ((a1.field_4.field_4.1.field_3.0==79) && (a1.field_4.field_4.1.field_3.1==-1.4375) && (a1.field_4.field_4.1.field_3.2==91) && (a1.field_4.field_4.1.field_3.3==96))) && (a1.field_4.field_4.2==0.09375) && (a1.field_4.field_4.3==`E_6_4)) && (a1.field_4.field_5==1.515625)) && (a1.field_5==2.265625))
+        goto bad
+    ;;
+
+    if !(a2==`E_41_5)
+        goto bad
+    ;;
+
+    if !((a3.0==`E_32_8) && (a3.1==203))
+        goto bad
+    ;;
+
+    if !((a4.field_1==-1.58984375) && (a4.field_2==217) && (a4.field_3==3500137676) && (a4.field_4==101686982737920))
+        goto bad
+    ;;
+
+    if !(a5==0.10546875)
+        goto bad
+    ;;
+
+    if !(a6==3.21875)
+        goto bad
+    ;;
+
+    if !(a7==40133181046784)
+        goto bad
+    ;;
+
+    if !(a8==71741835313152)
+        goto bad
+    ;;
+
+    if !((a9.0==221313136459776) && (a9.1==104460582912) && (a9.2==149))
+        goto bad
+    ;;
+
+    -> `E_43_1
+
+:bad
+    -> `E_43_2
+}
+
+const fn_7_myr = { a1 : t48
+    if !(((a1.field_1.field_1==6386332991488) && (a1.field_1.field_2==-3.90625) && (a1.field_1.field_3==163) && (a1.field_1.field_4==155193554763776) && ((a1.field_1.field_5.0==`E_35_3) && (a1.field_1.field_5.1==18))) && (((a1.field_2.0.field_1==112229799297024) && (a1.field_2.0.field_2==-2.8984375) && (a1.field_2.0.field_3==216) && (a1.field_2.0.field_4==44483204612096) && ((a1.field_2.0.field_5.0==`E_35_2) && (a1.field_2.0.field_5.1==195))) && (a1.field_2.1==39665754832896) && (a1.field_2.2==114) && (a1.field_2.3==776337414)) && (a1.field_3==`E_46_5) && (a1.field_4==146729052536832) && ((((a1.field_5.0.0.0==153) && (a1.field_5.0.0.1==1.234375) && (a1.field_5.0.0.2==43) && (a1.field_5.0.0.3==174)) && ((a1.field_5.0.1.field_1==26828980748288) && (a1.field_5.0.1.field_2==242) && ((a1.field_5.0.1.field_3.0==236) && (a1.field_5.0.1.field_3.1==-1.078125) && (a1.field_5.0.1.field_3.2==180) && (a1.field_5.0.1.field_3.3==30)))) && (a1.field_5.1==266092824363008)) && ((a1.field_6.0==13831859994624) && ((a1.field_6.1.field_1==0.390625)) && ((a1.field_6.2.field_1==0.0703125) && (a1.field_6.2.field_2==`E_20_1) && (a1.field_6.2.field_3==`E_21_6) && ((a1.field_6.2.field_4.0==-2.765625) && ((a1.field_6.2.field_4.1.field_1==175411747749888) && (((a1.field_6.2.field_4.1.field_2.0.field_1==262729443049472) && (a1.field_6.2.field_4.1.field_2.0.field_2==932333724) && (a1.field_6.2.field_4.1.field_2.0.field_3==5) && (a1.field_6.2.field_4.1.field_2.0.field_4==16) && (a1.field_6.2.field_4.1.field_2.0.field_5==17637135220736)) && (a1.field_6.2.field_4.1.field_2.1==46) && (a1.field_6.2.field_4.1.field_2.2==`E_6_2)) && (((a1.field_6.2.field_4.1.field_3.0.0==211) && (a1.field_6.2.field_4.1.field_3.0.1==-0.5625) && (a1.field_6.2.field_4.1.field_3.0.2==171) && (a1.field_6.2.field_4.1.field_3.0.3==1)) && ((a1.field_6.2.field_4.1.field_3.1.field_1==12764915826688) && (a1.field_6.2.field_4.1.field_3.1.field_2==49) && ((a1.field_6.2.field_4.1.field_3.1.field_3.0==154) && (a1.field_6.2.field_4.1.field_3.1.field_3.1==1.375) && (a1.field_6.2.field_4.1.field_3.1.field_3.2==93) && (a1.field_6.2.field_4.1.field_3.1.field_3.3==73))))) && (((a1.field_6.2.field_4.2.0.field_1==-1.46875) && ((a1.field_6.2.field_4.2.0.field_2.0==79) && (a1.field_6.2.field_4.2.0.field_2.1==-0.90625) && (a1.field_6.2.field_4.2.0.field_2.2==49) && (a1.field_6.2.field_4.2.0.field_2.3==4))) && (a1.field_6.2.field_4.2.1==93216219463680) && (a1.field_6.2.field_4.2.2==-2.83203125)))) && ((a1.field_6.3.0==18454498639872) && (a1.field_6.3.1==269237052506112) && (a1.field_6.3.2==165))))
+        goto bad
+    ;;
+
+    -> 2499773006
+
+:bad
+    -> 3403919486
+}
+
+const fn_8_myr = { a1 : (uint8,flt32,uint8,uint8), a2 : (flt32,t44,flt64,t49), a3 : t51, a4 : flt32, a5 : t52, a6 : uint32, a7 : t53, a8 : uint8
+    if !((a1.0==200) && (a1.1==0.25) && (a1.2==18) && (a1.3==246))
+        goto bad
+    ;;
+
+    if !((a2.0==-0.734375) && ((a2.1.field_1==8592161505280) && (a2.1.field_2==2.32421875) && (a2.1.field_3==77) && (a2.1.field_4==95804356820992) && ((a2.1.field_5.0==`E_35_1) && (a2.1.field_5.1==126))) && (a2.2==-1.12109375) && (a2.3==`E_49_3))
+        goto bad
+    ;;
+
+    if !(a3==`E_51_3)
+        goto bad
+    ;;
+
+    if !(a4==0.1875)
+        goto bad
+    ;;
+
+    if !((a5.field_1==-0.81640625))
+        goto bad
+    ;;
+
+    if !(a6==441584498)
+        goto bad
+    ;;
+
+    if !((a7.field_1==198))
+        goto bad
+    ;;
+
+    if !(a8==89)
+        goto bad
+    ;;
+
+    -> 1.421875
+
+:bad
+    -> 0.5625
+}
+
+const fn_9_myr = { a1 : t51, a2 : flt32, a3 : flt32, a4 : (t54,uint8,t55), a5 : t58, a6 : (t59,flt32,(flt64,flt32,uint64,uint64)), a7 : t65, a8 : t66, a9 : t67, a10 : flt64
+    if !(a1==`E_51_8)
+        goto bad
+    ;;
+
+    if !(a2==-0.796875)
+        goto bad
+    ;;
+
+    if !(a3==-0.71875)
+        goto bad
+    ;;
+
+    if !((a4.0==`E_54_7) && (a4.1==255) && ((((a4.2.field_1.field_1.0==130105287114752) && ((a4.2.field_1.field_1.1.field_1==-1.0)) && ((a4.2.field_1.field_1.2.field_1==3.53125) && (a4.2.field_1.field_1.2.field_2==`E_20_2) && (a4.2.field_1.field_1.2.field_3==`E_21_1) && ((a4.2.field_1.field_1.2.field_4.0==-0.67578125) && ((a4.2.field_1.field_1.2.field_4.1.field_1==23617654620160) && (((a4.2.field_1.field_1.2.field_4.1.field_2.0.field_1==12594182750208) && (a4.2.field_1.field_1.2.field_4.1.field_2.0.field_2==2889081194) && (a4.2.field_1.field_1.2.field_4.1.field_2.0.field_3==84) && (a4.2.field_1.field_1.2.field_4.1.field_2.0.field_4==84) && (a4.2.field_1.field_1.2.field_4.1.field_2.0.field_5==265251503210496)) && (a4.2.field_1.field_1.2.field_4.1.field_2.1==17) && (a4.2.field_1.field_1.2.field_4.1.field_2.2==`E_6_7)) && (((a4.2.field_1.field_1.2.field_4.1.field_3.0.0==141) && (a4.2.field_1.field_1.2.field_4.1.field_3.0.1==-0.1875) && (a4.2.field_1.field_1.2.field_4.1.field_3.0.2==10) && (a4.2.field_1.field_1.2.field_4.1.field_3.0.3==118)) && ((a4.2.field_1.field_1.2.field_4.1.field_3.1.field_1==24302215233536) && (a4.2.field_1.field_1.2.field_4.1.field_3.1.field_2==170) && ((a4.2.field_1.field_1.2.field_4.1.field_3.1.field_3.0==64) && (a4.2.field_1.field_1.2.field_4.1.field_3.1.field_3.1==0.953125) && (a4.2.field_1.field_1.2.field_4.1.field_3.1.field_3.2==156) && (a4.2.field_1.field_1.2.field_4.1.field_3.1.field_3.3==112))))) && (((a4.2.field_1.field_1.2.field_4.2.0.field_1==0.3125) && ((a4.2.field_1.field_1.2.field_4.2.0.field_2.0==168) && (a4.2.field_1.field_1.2.field_4.2.0.field_2.1==0.3125) && (a4.2.field_1.field_1.2.field_4.2.0.field_2.2==140) && (a4.2.field_1.field_1.2.field_4.2.0.field_2.3==197))) && (a4.2.field_1.field_1.2.field_4.2.1==149682231705600) && (a4.2.field_1.field_1.2.field_4.2.2==0.3828125)))) && ((a4.2.field_1.field_1.3.0==66190105247744) && (a4.2.field_1.field_1.3.1==201243456045056) && (a4.2.field_1.field_1.3.2==128))) && (a4.2.field_1.field_2==1608787508) && ((a4.2.field_1.field_3.0==208) && (a4.2.field_1.field_3.1==3925244758)) && ((((a4.2.field_1.field_4.0.field_1.field_1==-0.125) && ((a4.2.field_1.field_4.0.field_1.field_2.0==219) && (a4.2.field_1.field_4.0.field_1.field_2.1==0.265625) && (a4.2.field_1.field_4.0.field_1.field_2.2==201) && (a4.2.field_1.field_4.0.field_1.field_2.3==48))) && ((a4.2.field_1.field_4.0.field_2.field_1==148885215510528) && (a4.2.field_1.field_4.0.field_2.field_2==219) && ((a4.2.field_1.field_4.0.field_2.field_3.0==41) && (a4.2.field_1.field_4.0.field_2.field_3.1==-1.3125) && (a4.2.field_1.field_4.0.field_2.field_3.2==75) && (a4.2.field_1.field_4.0.field_2.field_3.3==52))) && ((a4.2.field_1.field_4.0.field_3.field_1==153670362464256) && (a4.2.field_1.field_4.0.field_3.field_2==97) && ((a4.2.field_1.field_4.0.field_3.field_3.0==222) && (a4.2.field_1.field_4.0.field_3.field_3.1==0.9375) && (a4.2.field_1.field_4.0.field_3.field_3.2==47) && (a4.2.field_1.field_4.0.field_3.field_3.3==122)))) && ((a4.2.field_1.field_4.1.field_1==66828912033792) && (a4.2.field_1.field_4.1.field_2==201) && ((a4.2.field_1.field_4.1.field_3.0==35) && (a4.2.field_1.field_4.1.field_3.1==1.046875) && (a4.2.field_1.field_4.1.field_3.2==86) && (a4.2.field_1.field_4.1.field_3.3==233))) && (a4.2.field_1.field_4.2==-0.421875) && (a4.2.field_1.field_4.3==`E_6_7)) && (a4.2.field_1.field_5==-1.109375)) && (a4.2.field_2==350527626) && (a4.2.field_3==98) && (((a4.2.field_4.0.field_1==146849136115712) && (a4.2.field_4.0.field_2==3845172994) && (a4.2.field_4.0.field_3==76) && (a4.2.field_4.0.field_4==250) && (a4.2.field_4.0.field_5==212141542211584)) && (a4.2.field_4.1==227) && (a4.2.field_4.2==`E_6_6))))
+        goto bad
+    ;;
+
+    if !((a5.field_1==`E_57_1) && ((a5.field_2.field_1==77)) && (a5.field_3==-2.5))
+        goto bad
+    ;;
+
+    if !((a6.0==`E_59_2) && (a6.1==-0.984375) && ((a6.2.0==-1.09375) && (a6.2.1==-1.53125) && (a6.2.2==20793480314880) && (a6.2.3==36073398206464)))
+        goto bad
+    ;;
+
+    if !(((a7.field_1.0==-2.32421875) && (a7.field_1.1==208)) && ((a7.field_2.field_1==-0.0625) && ((((a7.field_2.field_2.0.0.0==224) && (a7.field_2.field_2.0.0.1==-0.984375) && (a7.field_2.field_2.0.0.2==131) && (a7.field_2.field_2.0.0.3==218)) && ((a7.field_2.field_2.0.1.field_1==209069555974144) && (a7.field_2.field_2.0.1.field_2==100) && ((a7.field_2.field_2.0.1.field_3.0==82) && (a7.field_2.field_2.0.1.field_3.1==1.4375) && (a7.field_2.field_2.0.1.field_3.2==89) && (a7.field_2.field_2.0.1.field_3.3==16)))) && (a7.field_2.field_2.1==273030717767680)) && (((((a7.field_2.field_3.field_1.0.0.field_1==62938097254400) && ((a7.field_2.field_3.field_1.0.0.field_2.0==107) && (a7.field_2.field_3.field_1.0.0.field_2.1==0.609375) && (a7.field_2.field_3.field_1.0.0.field_2.2==97) && (a7.field_2.field_3.field_1.0.0.field_2.3==70)) && (a7.field_2.field_3.field_1.0.0.field_3==77561457147904) && (a7.field_2.field_3.field_1.0.0.field_4==1.265625)) && (a7.field_2.field_3.field_1.0.1==-1.515625)) && ((((a7.field_2.field_3.field_1.1.0.field_1.field_1==-0.828125) && ((a7.field_2.field_3.field_1.1.0.field_1.field_2.0==174) && (a7.field_2.field_3.field_1.1.0.field_1.field_2.1==1.390625) && (a7.field_2.field_3.field_1.1.0.field_1.field_2.2==142) && (a7.field_2.field_3.field_1.1.0.field_1.field_2.3==121))) && ((a7.field_2.field_3.field_1.1.0.field_2.field_1==266278944636928) && (a7.field_2.field_3.field_1.1.0.field_2.field_2==1) && ((a7.field_2.field_3.field_1.1.0.field_2.field_3.0==57) && (a7.field_2.field_3.field_1.1.0.field_2.field_3.1==-0.1875) && (a7.field_2.field_3.field_1.1.0.field_2.field_3.2==53) && (a7.field_2.field_3.field_1.1.0.field_2.field_3.3==10))) && ((a7.field_2.field_3.field_1.1.0.field_3.field_1==258630503497728) && (a7.field_2.field_3.field_1.1.0.field_3.field_2==22) && ((a7.field_2.field_3.field_1.1.0.field_3.field_3.0==58) && (a7.field_2.field_3.field_1.1.0.field_3.field_3.1==-0.203125) && (a7.field_2.field_3.field_1.1.0.field_3.field_3.2==241) && (a7.field_2.field_3.field_1.1.0.field_3.field_3.3==248)))) && ((a7.field_2.field_3.field_1.1.1.field_1==232005730828288) && (a7.field_2.field_3.field_1.1.1.field_2==67) && ((a7.field_2.field_3.field_1.1.1.field_3.0==237) && (a7.field_2.field_3.field_1.1.1.field_3.1==-1.03125) && (a7.field_2.field_3.field_1.1.1.field_3.2==83) && (a7.field_2.field_3.field_1.1.1.field_3.3==229))) && (a7.field_2.field_3.field_1.1.2==-0.328125) && (a7.field_2.field_3.field_1.1.3==`E_6_6)) && (a7.field_2.field_3.field_1.2==2541087240) && (((a7.field_2.field_3.field_1.3.field_1.field_1==0.875) && ((a7.field_2.field_3.field_1.3.field_1.field_2.0==4) && (a7.field_2.field_3.field_1.3.field_1.field_2.1==1.15625) && (a7.field_2.field_3.field_1.3.field_1.field_2.2==173) && (a7.field_2.field_3.field_1.3.field_1.field_2.3==8))) && ((a7.field_2.field_3.field_1.3.field_2.field_1==29310895783936) && (a7.field_2.field_3.field_1.3.field_2.field_2==92) && ((a7.field_2.field_3.field_1.3.field_2.field_3.0==250) && (a7.field_2.field_3.field_1.3.field_2.field_3.1==0.515625) && (a7.field_2.field_3.field_1.3.field_2.field_3.2==214) && (a7.field_2.field_3.field_1.3.field_2.field_3.3==236))) && ((a7.field_2.field_3.field_1.3.field_3.field_1==188538419019776) && (a7.field_2.field_3.field_1.3.field_3.field_2==16) && ((a7.field_2.field_3.field_1.3.field_3.field_3.0==92) && (a7.field_2.field_3.field_1.3.field_3.field_3.1==1.1875) && (a7.field_2.field_3.field_1.3.field_3.field_3.2==26) && (a7.field_2.field_3.field_1.3.field_3.field_3.3==72))))) && (a7.field_2.field_3.field_2==`E_19_9) && (a7.field_2.field_3.field_3==93123907813376) && (a7.field_2.field_3.field_4==`E_20_6) && (a7.field_2.field_3.field_5==`E_21_9) && ((a7.field_2.field_3.field_6.0==84919533043712) && (a7.field_2.field_3.field_6.1==2312961846))) && (a7.field_2.field_4==738749758)) && (((a7.field_3.field_1.0==`E_59_2) && (a7.field_3.field_1.1==0.671875) && ((a7.field_3.field_1.2.0==-0.01953125) && (a7.field_3.field_1.2.1==-1.171875) && (a7.field_3.field_1.2.2==30820079632384) && (a7.field_3.field_1.2.3==68216701976576))) && (a7.field_3.field_2==`E_21_7) && (a7.field_3.field_3==227) && (a7.field_3.field_4==`E_31_2)))
+        goto bad
+    ;;
+
+    if !(a8==`E_66_3)
+        goto bad
+    ;;
+
+    if !(a9==`E_67_3)
+        goto bad
+    ;;
+
+    if !(a10==2.06640625)
+        goto bad
+    ;;
+
+    -> 6316575686656
+
+:bad
+    -> 232898686615552
+}
+
+const fn_10_myr = { a1 : t74, a2 : flt32, a3 : t75, a4 : uint8, a5 : (uint64,t44,t76,t77), a6 : t79
+    if !(((a1.field_1.0==1.21875) && (a1.field_1.1==-0.890625) && (a1.field_1.2==`E_54_5) && (a1.field_1.3==-1.140625)) && ((a1.field_2.field_1==-2.86328125) && ((a1.field_2.field_2.field_1==272734424006656) && ((a1.field_2.field_2.field_2.0==168) && (a1.field_2.field_2.field_2.1==-0.3125) && (a1.field_2.field_2.field_2.2==7) && (a1.field_2.field_2.field_2.3==96)) && (a1.field_2.field_2.field_3==194650230882304) && (a1.field_2.field_2.field_4==1.3125)) && (a1.field_2.field_3==2832640246) && (a1.field_2.field_4==248902425116672) && (a1.field_2.field_5==3177491204) && (a1.field_2.field_6==`E_20_7)) && ((((a1.field_3.field_1.0.0==242) && (a1.field_3.field_1.0.1==1.0) && (a1.field_3.field_1.0.2==118) && (a1.field_3.field_1.0.3==202)) && ((a1.field_3.field_1.1.field_1==130511054045184) && (a1.field_3.field_1.1.field_2==60) && ((a1.field_3.field_1.1.field_3.0==149) && (a1.field_3.field_1.1.field_3.1==1.25) && (a1.field_3.field_1.1.field_3.2==209) && (a1.field_3.field_1.1.field_3.3==211)))) && (a1.field_3.field_2==65)) && (a1.field_4==`E_71_4) && (a1.field_5==`E_72_7) && ((a1.field_6.0==1065245434) && (a1.field_6.1==0.359375) && ((a1.field_6.2.0==182449277763584) && (a1.field_6.2.1==2003708228))))
+        goto bad
+    ;;
+
+    if !(a2==0.890625)
+        goto bad
+    ;;
+
+    if !(a3==`E_75_4)
+        goto bad
+    ;;
+
+    if !(a4==73)
+        goto bad
+    ;;
+
+    if !((a5.0==100724679639040) && ((a5.1.field_1==197606249070592) && (a5.1.field_2==0.3515625) && (a5.1.field_3==45) && (a5.1.field_4==111205168709632) && ((a5.1.field_5.0==`E_35_6) && (a5.1.field_5.1==168))) && (((((a5.2.field_1.field_1.field_1.0==273706513334272) && ((a5.2.field_1.field_1.field_1.1.field_1==0.625)) && ((a5.2.field_1.field_1.field_1.2.field_1==3.27734375) && (a5.2.field_1.field_1.field_1.2.field_2==`E_20_4) && (a5.2.field_1.field_1.field_1.2.field_3==`E_21_5) && ((a5.2.field_1.field_1.field_1.2.field_4.0==1.125) && ((a5.2.field_1.field_1.field_1.2.field_4.1.field_1==228193040859136) && (((a5.2.field_1.field_1.field_1.2.field_4.1.field_2.0.field_1==197736696643584) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_2.0.field_2==2597012506) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_2.0.field_3==181) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_2.0.field_4==213) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_2.0.field_5==107853796474880)) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_2.1==110) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_2.2==`E_6_2)) && (((a5.2.field_1.field_1.field_1.2.field_4.1.field_3.0.0==122) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_3.0.1==1.296875) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_3.0.2==218) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_3.0.3==48)) && ((a5.2.field_1.field_1.field_1.2.field_4.1.field_3.1.field_1==13448229421056) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_3.1.field_2==244) && ((a5.2.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.0==47) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.1==1.453125) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.2==167) && (a5.2.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.3==113))))) && (((a5.2.field_1.field_1.field_1.2.field_4.2.0.field_1==-0.5625) && ((a5.2.field_1.field_1.field_1.2.field_4.2.0.field_2.0==91) && (a5.2.field_1.field_1.field_1.2.field_4.2.0.field_2.1==1.53125) && (a5.2.field_1.field_1.field_1.2.field_4.2.0.field_2.2==127) && (a5.2.field_1.field_1.field_1.2.field_4.2.0.field_2.3==192))) && (a5.2.field_1.field_1.field_1.2.field_4.2.1==208774694567936) && (a5.2.field_1.field_1.field_1.2.field_4.2.2==-2.68359375)))) && ((a5.2.field_1.field_1.field_1.3.0==203837156753408) && (a5.2.field_1.field_1.field_1.3.1==124751440248832) && (a5.2.field_1.field_1.field_1.3.2==19))) && (a5.2.field_1.field_1.field_2==949240352) && ((a5.2.field_1.field_1.field_3.0==233) && (a5.2.field_1.field_1.field_3.1==3093393614)) && ((((a5.2.field_1.field_1.field_4.0.field_1.field_1==-1.46875) && ((a5.2.field_1.field_1.field_4.0.field_1.field_2.0==157) && (a5.2.field_1.field_1.field_4.0.field_1.field_2.1==-0.546875) && (a5.2.field_1.field_1.field_4.0.field_1.field_2.2==189) && (a5.2.field_1.field_1.field_4.0.field_1.field_2.3==115))) && ((a5.2.field_1.field_1.field_4.0.field_2.field_1==199305275375616) && (a5.2.field_1.field_1.field_4.0.field_2.field_2==43) && ((a5.2.field_1.field_1.field_4.0.field_2.field_3.0==171) && (a5.2.field_1.field_1.field_4.0.field_2.field_3.1==-0.984375) && (a5.2.field_1.field_1.field_4.0.field_2.field_3.2==22) && (a5.2.field_1.field_1.field_4.0.field_2.field_3.3==134))) && ((a5.2.field_1.field_1.field_4.0.field_3.field_1==105055744950272) && (a5.2.field_1.field_1.field_4.0.field_3.field_2==34) && ((a5.2.field_1.field_1.field_4.0.field_3.field_3.0==122) && (a5.2.field_1.field_1.field_4.0.field_3.field_3.1==0.1875) && (a5.2.field_1.field_1.field_4.0.field_3.field_3.2==25) && (a5.2.field_1.field_1.field_4.0.field_3.field_3.3==33)))) && ((a5.2.field_1.field_1.field_4.1.field_1==1198625914880) && (a5.2.field_1.field_1.field_4.1.field_2==107) && ((a5.2.field_1.field_1.field_4.1.field_3.0==125) && (a5.2.field_1.field_1.field_4.1.field_3.1==1.546875) && (a5.2.field_1.field_1.field_4.1.field_3.2==235) && (a5.2.field_1.field_1.field_4.1.field_3.3==61))) && (a5.2.field_1.field_1.field_4.2==0.734375) && (a5.2.field_1.field_1.field_4.3==`E_6_1)) && (a5.2.field_1.field_1.field_5==1.453125)) && (a5.2.field_1.field_2==763193548) && (a5.2.field_1.field_3==39) && (((a5.2.field_1.field_4.0.field_1==52338931924992) && (a5.2.field_1.field_4.0.field_2==391110206) && (a5.2.field_1.field_4.0.field_3==223) && (a5.2.field_1.field_4.0.field_4==55) && (a5.2.field_1.field_4.0.field_5==198983641202688)) && (a5.2.field_1.field_4.1==50) && (a5.2.field_1.field_4.2==`E_6_7))) && (a5.2.field_2==673599174)) && (((((a5.3.field_1.field_1.field_1.0==254957327745024) && ((a5.3.field_1.field_1.field_1.1.field_1==-1.171875)) && ((a5.3.field_1.field_1.field_1.2.field_1==2.5546875) && (a5.3.field_1.field_1.field_1.2.field_2==`E_20_1) && (a5.3.field_1.field_1.field_1.2.field_3==`E_21_2) && ((a5.3.field_1.field_1.field_1.2.field_4.0==-1.171875) && ((a5.3.field_1.field_1.field_1.2.field_4.1.field_1==130672052011008) && (((a5.3.field_1.field_1.field_1.2.field_4.1.field_2.0.field_1==97871770550272) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_2.0.field_2==3555186718) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_2.0.field_3==6) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_2.0.field_4==114) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_2.0.field_5==270228958085120)) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_2.1==7) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_2.2==`E_6_7)) && (((a5.3.field_1.field_1.field_1.2.field_4.1.field_3.0.0==114) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_3.0.1==-1.5) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_3.0.2==200) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_3.0.3==176)) && ((a5.3.field_1.field_1.field_1.2.field_4.1.field_3.1.field_1==212862159159296) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_3.1.field_2==220) && ((a5.3.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.0==167) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.1==1.359375) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.2==3) && (a5.3.field_1.field_1.field_1.2.field_4.1.field_3.1.field_3.3==215))))) && (((a5.3.field_1.field_1.field_1.2.field_4.2.0.field_1==-1.484375) && ((a5.3.field_1.field_1.field_1.2.field_4.2.0.field_2.0==226) && (a5.3.field_1.field_1.field_1.2.field_4.2.0.field_2.1==-1.390625) && (a5.3.field_1.field_1.field_1.2.field_4.2.0.field_2.2==187) && (a5.3.field_1.field_1.field_1.2.field_4.2.0.field_2.3==21))) && (a5.3.field_1.field_1.field_1.2.field_4.2.1==4365063815168) && (a5.3.field_1.field_1.field_1.2.field_4.2.2==3.0390625)))) && ((a5.3.field_1.field_1.field_1.3.0==278530325086209) && (a5.3.field_1.field_1.field_1.3.1==40351778734080) && (a5.3.field_1.field_1.field_1.3.2==183))) && (a5.3.field_1.field_1.field_2==345942008) && ((a5.3.field_1.field_1.field_3.0==91) && (a5.3.field_1.field_1.field_3.1==281298906)) && ((((a5.3.field_1.field_1.field_4.0.field_1.field_1==0.140625) && ((a5.3.field_1.field_1.field_4.0.field_1.field_2.0==180) && (a5.3.field_1.field_1.field_4.0.field_1.field_2.1==1.234375) && (a5.3.field_1.field_1.field_4.0.field_1.field_2.2==145) && (a5.3.field_1.field_1.field_4.0.field_1.field_2.3==38))) && ((a5.3.field_1.field_1.field_4.0.field_2.field_1==240181903360000) && (a5.3.field_1.field_1.field_4.0.field_2.field_2==153) && ((a5.3.field_1.field_1.field_4.0.field_2.field_3.0==4) && (a5.3.field_1.field_1.field_4.0.field_2.field_3.1==-0.625) && (a5.3.field_1.field_1.field_4.0.field_2.field_3.2==158) && (a5.3.field_1.field_1.field_4.0.field_2.field_3.3==204))) && ((a5.3.field_1.field_1.field_4.0.field_3.field_1==279255610818561) && (a5.3.field_1.field_1.field_4.0.field_3.field_2==96) && ((a5.3.field_1.field_1.field_4.0.field_3.field_3.0==169) && (a5.3.field_1.field_1.field_4.0.field_3.field_3.1==0.46875) && (a5.3.field_1.field_1.field_4.0.field_3.field_3.2==79) && (a5.3.field_1.field_1.field_4.0.field_3.field_3.3==172)))) && ((a5.3.field_1.field_1.field_4.1.field_1==137219642097664) && (a5.3.field_1.field_1.field_4.1.field_2==85) && ((a5.3.field_1.field_1.field_4.1.field_3.0==143) && (a5.3.field_1.field_1.field_4.1.field_3.1==0.140625) && (a5.3.field_1.field_1.field_4.1.field_3.2==17) && (a5.3.field_1.field_1.field_4.1.field_3.3==164))) && (a5.3.field_1.field_1.field_4.2==0.1875) && (a5.3.field_1.field_1.field_4.3==`E_6_7)) && (a5.3.field_1.field_1.field_5==0.421875)) && (a5.3.field_1.field_2==3026647616) && (a5.3.field_1.field_3==171) && (((a5.3.field_1.field_4.0.field_1==200920828215296) && (a5.3.field_1.field_4.0.field_2==266056950) && (a5.3.field_1.field_4.0.field_3==188) && (a5.3.field_1.field_4.0.field_4==66) && (a5.3.field_1.field_4.0.field_5==215864985649152)) && (a5.3.field_1.field_4.1==161) && (a5.3.field_1.field_4.2==`E_6_6))) && (a5.3.field_2==234) && (a5.3.field_3==-0.12890625) && (a5.3.field_4==109) && ((((a5.3.field_5.field_1.0.0==238) && (a5.3.field_5.field_1.0.1==0.890625) && (a5.3.field_5.field_1.0.2==11) && (a5.3.field_5.field_1.0.3==187)) && ((a5.3.field_5.field_1.1.field_1==218973062561792) && (a5.3.field_5.field_1.1.field_2==108) && ((a5.3.field_5.field_1.1.field_3.0==100) && (a5.3.field_5.field_1.1.field_3.1==-0.234375) && (a5.3.field_5.field_1.1.field_3.2==187) && (a5.3.field_5.field_1.1.field_3.3==17)))) && (a5.3.field_5.field_2==233)) && (a5.3.field_6==296769572)))
+        goto bad
+    ;;
+
+    if !(a6==`E_79_2)
+        goto bad
+    ;;
+
+    -> -1.515625
+
+:bad
+    -> -1.28125
+}
+

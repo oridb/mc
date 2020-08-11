@@ -1,0 +1,16 @@
+use std
+use "004_types"
+
+pkg = 
+    extern const fn_1_c : (a1 : flt64 -> t2)
+    extern const fn_2_c : (a1 : flt64, a2 : t4, a3 : (uint8,uint8,flt32,uint64), a4 : (uint64,flt32) -> uint64)
+    extern const fn_3_c : (a1 : (uint8,uint8,flt32,uint64), a2 : t3, a3 : (uint8,t6,(uint64,flt32),t2), a4 : t4, a5 : (t8,uint32), a6 : uint8, a7 : flt32, a8 : flt32 -> (uint32,(flt32,uint32),(flt64,t2),(t4,(uint8,uint8,flt32,uint64),(uint64,flt32))))
+    extern const fn_4_c : (a1 : (t14,flt32,uint64,t15) -> t19)
+    extern const fn_5_c : (a1 : uint32, a2 : (flt64,t2), a3 : t21, a4 : (uint8,flt64,t14,t22), a5 : t24, a6 : uint32, a7 : flt64, a8 : t26, a9 : t27, a10 : t28 -> t29)
+    extern const fn_6_c : (a1 : ((uint8,uint8,flt32,uint64),t2), a2 : t15 -> uint32)
+    extern const fn_7_c : (a1 : flt64, a2 : flt64, a3 : t31, a4 : t21, a5 : flt64, a6 : flt32, a7 : (t32,(t2,t18),t34), a8 : uint64 -> t37)
+    extern const fn_8_c : (a1 : t38, a2 : t39, a3 : flt64, a4 : uint8 -> (uint8,((uint32,(flt32,uint32),(flt64,t2),(t4,(uint8,uint8,flt32,uint64),(uint64,flt32))),uint32),uint8,t41))
+    extern const fn_9_c : (a1 : t46, a2 : flt32, a3 : t26, a4 : t47, a5 : t48, a6 : t54, a7 : uint32, a8 : flt32, a9 : t55, a10 : t56 -> uint64)
+    extern const fn_10_c : (a1 : uint64, a2 : flt64, a3 : (t57,(flt64,t36),t59,(uint64,flt32,t4,t38)), a4 : uint8, a5 : t62, a6 : uint8, a7 : flt64, a8 : uint64 -> t3)
+    extern const check_c_to_myr_fns : (-> int)
+;;

@@ -133,10 +133,6 @@ F() {
 	cd $here
 }
 
-posixonly() {
-	$*
-}
-
 echo "MTEST $(egrep '^[BF]' tests | wc -l)"
 . tests
 

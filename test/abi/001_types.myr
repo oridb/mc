@@ -1,0 +1,5 @@
+pkg =
+        type t1 = struct
+                field_1 : (uint64,flt64)
+        ;;
+;;

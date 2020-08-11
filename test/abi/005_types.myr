@@ -1,0 +1,420 @@
+pkg =
+
+type t2 = struct
+field_1 : flt32
+field_2 : (uint8,flt32,uint8,uint8)
+;;
+type t3 = struct
+field_1 : uint64
+field_2 : uint8
+field_3 : (uint8,flt32,uint8,uint8)
+;;
+type t4 = struct
+field_1 : t2
+field_2 : t3
+field_3 : t3
+;;
+type t5 = struct
+field_1 : uint64
+field_2 : uint32
+field_3 : uint8
+field_4 : uint8
+field_5 : uint64
+;;
+type t6 = union
+`E_6_1
+`E_6_2
+`E_6_3
+`E_6_4
+`E_6_5
+`E_6_6
+`E_6_7
+;;
+
+
+
+type t10 = struct
+field_1 : uint64
+field_2 : (t5,uint8,t6)
+field_3 : ((uint8,flt32,uint8,uint8),t3)
+;;
+
+
+
+
+type t15 = union
+`E_15_1
+`E_15_2
+`E_15_3
+`E_15_4
+`E_15_5
+`E_15_6
+`E_15_7
+`E_15_8
+`E_15_9
+;;
+type t16 = struct
+field_1 : uint64
+field_2 : (uint8,flt32,uint8,uint8)
+field_3 : uint64
+field_4 : flt32
+;;
+
+
+type t19 = union
+`E_19_1
+`E_19_2
+`E_19_3
+`E_19_4
+`E_19_5
+`E_19_6
+`E_19_7
+`E_19_8
+`E_19_9
+;;
+type t20 = union
+`E_20_1
+`E_20_2
+`E_20_3
+`E_20_4
+`E_20_5
+`E_20_6
+`E_20_7
+`E_20_8
+;;
+type t21 = union
+`E_21_1
+`E_21_2
+`E_21_3
+`E_21_4
+`E_21_5
+`E_21_6
+`E_21_7
+`E_21_8
+`E_21_9
+;;
+
+type t23 = struct
+field_1 : ((t16,flt32),(t4,t3,flt32,t6),uint32,t4)
+field_2 : t19
+field_3 : uint64
+field_4 : t20
+field_5 : t21
+field_6 : (uint64,uint32)
+;;
+type t24 = struct
+field_1 : flt32
+;;
+type t25 = struct
+field_1 : flt64
+field_2 : t20
+field_3 : t21
+field_4 : (flt64,t10,(t2,uint64,flt64))
+;;
+
+
+
+
+
+type t31 = union
+`E_31_1
+`E_31_2
+`E_31_3
+`E_31_4
+`E_31_5
+`E_31_6
+`E_31_7
+;;
+type t32 = union
+`E_32_1
+`E_32_2
+`E_32_3
+`E_32_4
+`E_32_5
+`E_32_6
+`E_32_7
+`E_32_8
+`E_32_9
+;;
+
+
+type t35 = union
+`E_35_1
+`E_35_2
+`E_35_3
+`E_35_4
+`E_35_5
+`E_35_6
+`E_35_7
+;;
+
+type t37 = union
+`E_37_1
+`E_37_2
+`E_37_3
+`E_37_4
+`E_37_5
+`E_37_6
+;;
+type t38 = union
+`E_38_1
+`E_38_2
+`E_38_3
+`E_38_4
+`E_38_5
+`E_38_6
+`E_38_7
+`E_38_8
+`E_38_9
+`E_38_10
+;;
+type t39 = struct
+field_1 : (uint64,t24,t25,(uint64,uint64,uint8))
+field_2 : uint32
+field_3 : (uint8,uint32)
+field_4 : (t4,t3,flt32,t6)
+field_5 : flt32
+;;
+type t40 = struct
+field_1 : (t4,t3,flt32,t6)
+field_2 : t6
+field_3 : t38
+field_4 : t39
+field_5 : flt64
+;;
+type t41 = union
+`E_41_1
+`E_41_2
+`E_41_3
+`E_41_4
+`E_41_5
+`E_41_6
+`E_41_7
+`E_41_8
+;;
+type t42 = struct
+field_1 : flt64
+field_2 : uint8
+field_3 : uint32
+field_4 : uint64
+;;
+type t43 = union
+`E_43_1
+`E_43_2
+`E_43_3
+`E_43_4
+`E_43_5
+`E_43_6
+`E_43_7
+`E_43_8
+`E_43_9
+;;
+type t44 = struct
+field_1 : uint64
+field_2 : flt64
+field_3 : uint8
+field_4 : uint64
+field_5 : (t35,uint8)
+;;
+
+type t46 = union
+`E_46_1
+`E_46_2
+`E_46_3
+`E_46_4
+`E_46_5
+`E_46_6
+;;
+
+type t48 = struct
+field_1 : t44
+field_2 : (t44,uint64,uint8,uint32)
+field_3 : t46
+field_4 : uint64
+field_5 : (((uint8,flt32,uint8,uint8),t3),uint64)
+field_6 : (uint64,t24,t25,(uint64,uint64,uint8))
+;;
+type t49 = union
+`E_49_1
+`E_49_2
+`E_49_3
+`E_49_4
+`E_49_5
+`E_49_6
+`E_49_7
+`E_49_8
+;;
+
+type t51 = union
+`E_51_1
+`E_51_2
+`E_51_3
+`E_51_4
+`E_51_5
+`E_51_6
+`E_51_7
+`E_51_8
+;;
+type t52 = struct
+field_1 : flt64
+;;
+type t53 = struct
+field_1 : uint8
+;;
+type t54 = union
+`E_54_1
+`E_54_2
+`E_54_3
+`E_54_4
+`E_54_5
+`E_54_6
+`E_54_7
+;;
+type t55 = struct
+field_1 : t39
+field_2 : uint32
+field_3 : uint8
+field_4 : (t5,uint8,t6)
+;;
+
+type t57 = union
+`E_57_1
+`E_57_2
+`E_57_3
+`E_57_4
+`E_57_5
+`E_57_6
+;;
+type t58 = struct
+field_1 : t57
+field_2 : t53
+field_3 : flt64
+;;
+type t59 = union
+`E_59_1
+`E_59_2
+`E_59_3
+`E_59_4
+`E_59_5
+`E_59_6
+;;
+
+
+
+type t63 = struct
+field_1 : flt32
+field_2 : (((uint8,flt32,uint8,uint8),t3),uint64)
+field_3 : t23
+field_4 : uint32
+;;
+type t64 = struct
+field_1 : (t59,flt32,(flt64,flt32,uint64,uint64))
+field_2 : t21
+field_3 : uint8
+field_4 : t31
+;;
+type t65 = struct
+field_1 : (flt64,uint8)
+field_2 : t63
+field_3 : t64
+;;
+type t66 = union
+`E_66_1
+`E_66_2
+`E_66_3
+`E_66_4
+`E_66_5
+`E_66_6
+`E_66_7
+`E_66_8
+;;
+type t67 = union
+`E_67_1
+`E_67_2
+`E_67_3
+`E_67_4
+`E_67_5
+`E_67_6
+`E_67_7
+`E_67_8
+`E_67_9
+`E_67_10
+;;
+
+type t69 = struct
+field_1 : flt64
+field_2 : t16
+field_3 : uint32
+field_4 : uint64
+field_5 : uint32
+field_6 : t20
+;;
+type t70 = struct
+field_1 : ((uint8,flt32,uint8,uint8),t3)
+field_2 : uint8
+;;
+type t71 = union
+`E_71_1
+`E_71_2
+`E_71_3
+`E_71_4
+`E_71_5
+`E_71_6
+`E_71_7
+`E_71_8
+`E_71_9
+`E_71_10
+;;
+type t72 = union
+`E_72_1
+`E_72_2
+`E_72_3
+`E_72_4
+`E_72_5
+`E_72_6
+`E_72_7
+`E_72_8
+`E_72_9
+;;
+
+type t74 = struct
+field_1 : (flt32,flt32,t54,flt32)
+field_2 : t69
+field_3 : t70
+field_4 : t71
+field_5 : t72
+field_6 : (uint32,flt32,(uint64,uint32))
+;;
+type t75 = union
+`E_75_1
+`E_75_2
+`E_75_3
+`E_75_4
+`E_75_5
+`E_75_6
+`E_75_7
+;;
+type t76 = struct
+field_1 : t55
+field_2 : uint32
+;;
+type t77 = struct
+field_1 : t55
+field_2 : uint8
+field_3 : flt64
+field_4 : uint8
+field_5 : t70
+field_6 : uint32
+;;
+
+type t79 = union
+`E_79_1
+`E_79_2
+`E_79_3
+`E_79_4
+`E_79_5
+`E_79_6
+`E_79_7
+`E_79_8
+;;
+;;
