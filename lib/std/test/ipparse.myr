@@ -60,12 +60,13 @@ const main = {
 }
 
 const eq = {ip, expected
+	var dst : byte[16]
 	var parsed
 	var p, e
 
 	parsed = std.ipparse(ip)
-	p = ipbytes(parsed)
-	e = ipbytes(expected)
+	p = ipbytes(dst[:], parsed)
+	e = ipbytes(dst[:], expected)
 	if !std.eq(p, e)
 		std.fput(1, "misparsed ip {}\n", ip)
 		std.put("parsed: ")
@@ -81,14 +82,19 @@ const eq = {ip, expected
 	;;
 }
 
-const ipbytes = {ipopt
+const ipbytes = {dst, ipopt
 	match ipopt
+	| `std.None:
+		-> [][:]
 	| `std.Some ip:
 		match ip
-		| `std.Ipv4 b:	-> b[:]
-		| `std.Ipv6 b:	-> b[:]
+		| `std.Ipv4 b:
+			std.slcp(dst[:4], b[:])
+			-> dst[:4]
+		| `std.Ipv6 b:
+			std.slcp(dst[:16], b[:])
+			-> dst[:4]
 		;;
-	| `std.None:	-> [][:]
 	;;
 	-> [][:]
 }
