@@ -60,13 +60,13 @@ const main = {
 }
 
 const eq = {ip, expected
-	var dst : byte[16]
+	var pdst, edst : byte[16]
 	var parsed
 	var p, e
 
 	parsed = std.ipparse(ip)
-	p = ipbytes(dst[:], parsed)
-	e = ipbytes(dst[:], expected)
+	p = ipbytes(pdst[:], parsed)
+	e = ipbytes(edst[:], expected)
 	if !std.eq(p, e)
 		std.fput(1, "misparsed ip {}\n", ip)
 		std.put("parsed: ")
