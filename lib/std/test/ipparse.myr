@@ -93,7 +93,7 @@ const ipbytes = {dst, ipopt
 			-> dst[:4]
 		| `std.Ipv6 b:
 			std.slcp(dst[:16], b[:])
-			-> dst[:4]
+			-> dst[:16]
 		;;
 	;;
 	-> [][:]
