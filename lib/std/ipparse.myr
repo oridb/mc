@@ -52,21 +52,24 @@ const ip4parse = {ip
 	;;
 }
 
+const ipv6seg = 8
+
 const ip6parse = {ip
 	var val : byte[16]
-	var expand, split
+	var expand
 	var v, ok
-	var i, nseg
+	var nseg, segsplit
 
 	ok = true
 	expand = false
-	split = 0
+	segsplit = 0
+
 	if ip.len > 2 && eq(ip[:2], "::")
 		expand = true
-		split = 0
 	;;
+
 	nseg = 0
-	for i = 0; ip.len > 0 && ok; i++
+	for var i = 0; ip.len > 0 && ok; i++
 		/* parse 'num' segment */
 		(v, ip, ok) = num(ip, 0, 65536, 16, ':', ok)
 
@@ -75,7 +78,7 @@ const ip6parse = {ip
 		val[i*2 + 1] = (v & 0xff : byte)
 
 		nseg++
-		if ip.len == 0 || nseg == 8
+		if ip.len == 0 || nseg == ipv6seg
 			break
 		;;
 
@@ -84,14 +87,14 @@ const ip6parse = {ip
 		if ip.len > 0 && ip[0] == (':' : byte) && !expand
 			(ip, ok) = delim(ip, ':', ok)
 			expand = true
-			split = i
+			segsplit = nseg
 		;;
 	;;
 
 	if ok && ip.len == 0
 		if expand
-			expandsplit(val[:], split, i)
-		elif nseg != 8
+			expandsplit(val[:], nseg, segsplit)
+		elif nseg != ipv6seg
 			-> `None
 		;;
 		-> `Some `Ipv6 val
@@ -101,12 +104,17 @@ const ip6parse = {ip
 }
 
 /* take "a:b::c:d" and expand it to "a:b:0:0:...:0:c:d" */
-const expandsplit = {ip, split, len
-	var width
+const expandsplit = {ip, nseg, segsplit
+	var head, tail
+	var split, middle
 
-	width = 16 - len
-	std.slcp(ip[split:len], ip[split+width:len+width])
-	std.slfill(ip[len:len+width], 0)
+	split = segsplit * 2
+	middle = (ipv6seg - nseg) * 2
+	head = ip[:split]
+	tail = ip[split : ip.len - middle]
+
+	std.slcp(ip[ip.len - tail.len:], tail)
+	std.slfill(ip[head.len : ip.len - tail.len], 0)
 }
 
 const delim = {ip, sep, ok
