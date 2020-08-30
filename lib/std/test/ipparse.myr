@@ -60,7 +60,8 @@ const main = {
 }
 
 const eq = {ip, expected
-	var pdst, edst : byte[16]
+	var pdst : byte[16]
+	var edst : byte[16]
 	var parsed
 	var p, e
 
