@@ -2590,7 +2590,7 @@ checkrange(Node *n)
 		sval = n->lit.intval;
 		if (sval < svranges[t->type][0] || sval > svranges[t->type][1])
 			fatal(n, "literal value %lld out of range for type \"%s\"", sval, tystr(t));
-	} else if ((t->type >= Tybyte && t->type <= Tyint64) || t->type == Tychar) {
+	} else if ((t->type >= Tybyte && t->type <= Tyuint64) || t->type == Tychar) {
 		uval = n->lit.intval;
 		if (uval < uvranges[t->type][0] || uval > uvranges[t->type][1])
 			fatal(n, "literal value %llu out of range for type \"%s\"", uval, tystr(t));
