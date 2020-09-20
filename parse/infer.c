@@ -2571,16 +2571,20 @@ checkrange(Node *n)
 	uint64_t uval;
 	static const int64_t svranges[][2] = {
 		/* signed ints */
-		[Tyint8] = {-128LL, 127LL}, [Tyint16] = {-32768LL, 32767LL},
-		/* FIXME: this has been doubled allow for uints... */
-		[Tyint32] = {-2147483648LL, 2 * 2147483647LL},
-		[Tyint] = {-2147483648LL, 2 * 2147483647LL},
+		[Tyint8] = {-128LL, 127LL},
+		[Tyint16] = {-32768LL, 32767LL},
+		[Tyint32] = {-2147483648LL, 2147483647LL},
+		[Tyint] = {-2147483648LL, 2147483647LL},
 		[Tyint64] = {-9223372036854775808ULL, 9223372036854775807LL},
 	};
 
 	static const uint64_t uvranges[][2] = {
-		[Tybyte] = {0, 255ULL}, [Tyuint8] = {0, 255ULL}, [Tyuint16] = {0, 65535ULL},
-		[Tyuint32] = {0, 4294967295ULL}, [Tyuint64] = {0, 18446744073709551615ULL},
+		[Tybyte] = {0, 255ULL},
+		[Tyuint8] = {0, 255ULL},
+		[Tyuint16] = {0, 65535ULL},
+		[Tyuint] = {0, 4294967295ULL},
+		[Tyuint32] = {0, 4294967295ULL},
+		[Tyuint64] = {0, 18446744073709551615ULL},
 		[Tychar] = {0, 4294967295ULL},
 	};
 
