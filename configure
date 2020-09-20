@@ -45,12 +45,19 @@ sysinit=''
 env='[][:]'
 case $OS in
     *Linux*)
+        ldd_version=`ldd --version 2>&1 | head -1 | cut -f1 -d' '`
+        if [ x"${ldd_version}" = x"musl" ]; then
+            dyn_loader='/lib/ld-musl-x86_64.so.1'
+        else
+            dyn_loader='/lib64/ld-linux-x86-64.so.2'
+        fi
+
         echo 'export SYS=linux' >> config.mk
         echo export INST_MAN=$prefix/share/man/man >> config.mk
         echo 'const Sys = "Linux"' >> mbld/config.myr
         echo 'const Linkcmd = ["ld", "--gc-sections"]' >> mbld/config.myr
         echo 'const Dlflags = ["-dynamic-linker",' \
-            '"/lib64/ld-linux-x86-64.so.2"]' >> mbld/config.myr
+            "\"$dyn_loader\"]" >> mbld/config.myr
         echo "const Manpath = \"share/man/man\"" >> mbld/config.myr
         ;;
     *Darwin*)
