@@ -1,0 +1,17 @@
+image: alpine/latest
+packages:
+  - bison
+  - gcc
+  - git
+  - make
+sources:
+  - https://git.sr.ht/~fsx/mc
+tasks:
+  - build: |
+      cd mc
+      ./configure
+      make bootstrap
+      make
+  - test: |
+      cd mc
+      make check
