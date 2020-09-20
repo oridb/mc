@@ -732,12 +732,14 @@ nextsuffix
 :
 		switch (peek()) {
 		case 'u':
+		case 'U':
 			if (unsignedval == 1)
 				lfatal(curloc, "Duplicate 'u' integer specifier");
 			next();
 			unsignedval = 1;
 			goto nextsuffix;
 		case 'l':
+		case 'L':
 			next();
 			if (unsignedval)
 				t->inttype = Tyuint64;
@@ -745,6 +747,7 @@ nextsuffix
 				t->inttype = Tyint64;
 			break;
 		case 'i':
+		case 'I':
 			next();
 			if (unsignedval)
 				t->inttype = Tyuint32;
@@ -752,6 +755,7 @@ nextsuffix
 				t->inttype = Tyint32;
 			break;
 		case 's':
+		case 'S':
 			next();
 			if (unsignedval)
 				t->inttype = Tyuint16;
@@ -759,6 +763,7 @@ nextsuffix
 				t->inttype = Tyint16;
 			break;
 		case 'b':
+		case 'B':
 			next();
 			if (unsignedval)
 				t->inttype = Tyuint8;

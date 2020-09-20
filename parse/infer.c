@@ -2570,22 +2570,22 @@ checkrange(Node *n)
 	int64_t sval;
 	uint64_t uval;
 	static const int64_t svranges[][2] = {
-		/* signed ints */
-		[Tyint8] = {-128LL, 127LL},
-		[Tyint16] = {-32768LL, 32767LL},
-		[Tyint32] = {-2147483648LL, 2147483647LL},
-		[Tyint] = {-2147483648LL, 2147483647LL},
-		[Tyint64] = {-9223372036854775808ULL, 9223372036854775807LL},
+		/* signed ints; allow one above max range for unary -'ve operator */
+		[Tyint8]  = {-128LL, 128LL},
+		[Tyint16] = {-32768LL, 32768LL},
+		[Tyint32] = {-2147483648LL, 2147483648LL},
+		[Tyint]	  = {-2147483648LL, 2147483648LL},
+		[Tyint64] = {-9223372036854775808ULL, 9223372036854775807ULL},
 	};
 
 	static const uint64_t uvranges[][2] = {
-		[Tybyte] = {0, 255ULL},
-		[Tyuint8] = {0, 255ULL},
+		[Tybyte]   = {0, 255ULL},
+		[Tyuint8]  = {0, 255ULL},
 		[Tyuint16] = {0, 65535ULL},
-		[Tyuint] = {0, 4294967295ULL},
+		[Tyuint]   = {0, 4294967295ULL},
 		[Tyuint32] = {0, 4294967295ULL},
 		[Tyuint64] = {0, 18446744073709551615ULL},
-		[Tychar] = {0, 4294967295ULL},
+		[Tychar]   = {0, 4294967295ULL},
 	};
 
 	/* signed types */
