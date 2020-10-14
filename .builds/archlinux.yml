@@ -1,4 +1,4 @@
-image: alpine/latest
+image: archlinux
 packages:
   - bison
   - gcc
