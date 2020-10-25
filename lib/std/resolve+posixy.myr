@@ -276,31 +276,36 @@ const dnsresolve = {host, rt
 }
 
 const dnsconnect = {ns
-	match ns
-	| `Ipv4 addr:	-> dnsconnectv4(addr)
-	| `Ipv6 addr:	die("don't support ipv6 yet\n")
-	;;
-}
-
-const dnsconnectv4 = {addr
-	var sa : sys.sockaddr_in
-	var s
+	var sa4 : sys.sockaddr_in
+	var sa6 : sys.sockaddr_in6
+	var sa	: sys.sockaddr#
+	var sock, sz
 	var status
+	var port = 53
 
-	s = sys.socket(sys.Afinet, sys.Sockdgram, 0)
-	if s < 0
+	match ns
+	| `Ipv4 bits:
+		sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(port)]
+		sa = (&sa4 : sys.sockaddr#)
+		sz = sizeof(sys.sockaddr_in)
+	| `Ipv6 bits:
+		sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
+		sa = (&sa6 : sys.sockaddr#)
+		sz = sizeof(sys.sockaddr_in6)
+	;;
+
+	sock = sys.socket(sa.fam, sys.Sockdgram, 0)
+	if sock < 0
 		-> -1
 	;;
-	sa = [
-		.fam = sys.Afinet,
-		.port = hosttonet(53),
-		.addr = addr,
-	]
-	status = sys.connect(s, (&sa : sys.sockaddr#), sizeof(sys.sockaddr_in))
+
+	status = sys.connect(sock, sa, sz)
 	if status < 0
+		sys.close(sock)
 		-> -1
 	;;
-	-> s
+
+	-> sock
 }
 
 const dnsquery = {srv, host, t
