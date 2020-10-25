@@ -233,6 +233,7 @@ type sockaddr_in = struct
 type sockaddr_in6 = struct
 	fam	: sockfam
 	port	: uint16
+	flowinfo	: uint32
 	addr	: byte[16]
 	scope	: uint32
 ;;
