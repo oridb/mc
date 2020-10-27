@@ -260,7 +260,7 @@ const dnsresolve = {host, rt
 		fd=dnsconnect(nameservers[i])
 		if fd != -1
 			srv[i] = [
-				.fd=dnsconnect(nameservers[i]),
+				.fd=fd,
 				.events=sys.Pollout,
 				.revents=0,
 			]
