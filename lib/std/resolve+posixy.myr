@@ -60,12 +60,12 @@ pkg std =
 	const resolvemx		: (host : byte[:]	-> result(hostinfo[:], resolveerr))
 	const resolverec	: (host : byte[:], t : rectype[:]	-> result(hostinfo[:], resolveerr))
 
-	const maxns = 5
 ;;
 
 const Hostfile = "/etc/hosts"
 const Resolvfile = "/etc/resolv.conf"
 const Timeout = 2_000
+const Maxns = 5
 
 var initdone	: bool = false
 var hostmap	: htab(byte[:], hostinfo)#
@@ -248,22 +248,23 @@ const word = {s
 }
 
 const dnsresolve = {host, rt
-	var srv : sys.pollfd[maxns]
-	var cutoff
-	var ret
+	var srv : sys.pollfd[Maxns]
+	var ret, fd, cutoff
 
 	if !valid(host)
 		-> `Err (`Badhost)
 	;;
 
-	cutoff = std.min(maxns, nameservers.len)
-
+	cutoff = std.min(Maxns, nameservers.len)
 	for var i = 0; i < cutoff; i++
-		srv[i] = [
-			.fd=dnsconnect(nameservers[i]),
-			.events=sys.Pollout,
-			.revents=0,
-		]
+		fd=dnsconnect(nameservers[i])
+		if fd != -1
+			srv[i] = [
+				.fd=dnsconnect(nameservers[i]),
+				.events=sys.Pollout,
+				.revents=0,
+			]
+		;;
 	;;
 
 	ret = dnsquery(srv[:cutoff], host, rt)
@@ -281,7 +282,6 @@ const dnsconnect = {ns
 	var sa	: sys.sockaddr#
 	var sock, sz
 	var status
-	var port = 53
 
 	match ns
 	| `Ipv4 bits:
@@ -310,7 +310,7 @@ const dnsconnect = {ns
 
 const dnsquery = {srv, host, t
 	var pkt : byte[512] /* big enough */
-	var id : uint16[maxns]
+	var id : uint16[Maxns]
 	var query
 	var fail
 	var giveup
