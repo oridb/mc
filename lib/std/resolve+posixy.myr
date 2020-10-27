@@ -285,11 +285,11 @@ const dnsconnect = {ns
 
 	match ns
 	| `Ipv4 bits:
-		sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(port)]
+		sa4=[.fam=sys.Afinet, .addr=bits, .port=hosttonet(53)]
 		sa = (&sa4 : sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in)
 	| `Ipv6 bits:
-		sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(port)]
+		sa6=[.fam=sys.Afinet6, .addr=bits, .port=hosttonet(53)]
 		sa = (&sa6 : sys.sockaddr#)
 		sz = sizeof(sys.sockaddr_in6)
 	;;
