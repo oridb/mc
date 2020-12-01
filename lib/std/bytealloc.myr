@@ -405,7 +405,7 @@ const bitpos : byte[32] = [
 const bktnum = {sz
 	var n, v
 
-	v = (sz >> 3 : uint32)
+	v = sz > 0 ? ((sz - 1) >> 3 : uint32) : 0
 	v |= v >> 1
 	v |= v >> 2
 	v |= v >> 4
