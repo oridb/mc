@@ -439,6 +439,7 @@ declcore: name {$$ = mkdecl($1->loc, $1, mktyvar($1->loc));}
 
 typedeclcore
 	: name Tcolon type {$$ = mkdecl($1->loc, $1, $3);}
+	| Tcolon type {$$ = mkpseudodecl($1->loc, $2);}
 	;
 
 name	: Tident {$$ = mkname($1->loc, $1->id);}
