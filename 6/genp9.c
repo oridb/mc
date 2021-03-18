@@ -156,8 +156,7 @@ iprintf(FILE *fd, Insn *insn)
 		/* %-formating */
 		p++;
 		idx = i;
-again
-:
+again:
 		switch (*p) {
 		case '\0':
 			goto done; /* skip the final p++ */
@@ -185,8 +184,7 @@ again
 			break;
 		}
 	}
-done
-:
+done:
 	return;
 }
 
