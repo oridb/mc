@@ -955,11 +955,19 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 					fatal(pat[cur->i], "wildcard variables have different types in the or-patterns");
 			}
 		}
-		/* If the match arm does not have or-pattern, we can insert the assignements of the captures at the beginning of the associated block.
-		 * Otherwise, the captures can bind different locations with the same identifier in thehe or-patterns, and thus the assignments must be
-		 * carried out before jumping into the block.
-		 * For this reason, in the case of having or-pattern, we store the information of captures in the dtree MATCH node and delegate the
-		 * insertion of the captures assignments to the ir generation of dtree */
+		/*
+		 * If the match arm does not have or-pattern, we can
+		 * insert the assignements of the captures at the
+		 * beginning of the associated block.  Otherwise,
+		 * the captures can bind different locations with
+		 * the same identifier in thehe or-patterns, and
+		 * thus the assignments must be carried out before
+		 * jumping into the block.  For this reason, in the
+		 * case of having or-pattern, we store the
+		 * information of captures in the dtree MATCH node
+		 * and delegate the insertion of the captures
+		 * assignments to the ir generation of dtree
+		 */
 		if (cur->hasorpat) {
 			cur->final->cap = cur->cap;
 			cur->final->ncap = cur->ncap;
