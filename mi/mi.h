@@ -55,6 +55,12 @@ struct Dtree {
 	size_t nnext;
 	Dtree *any;
 
+	/* This is only used in the MATCH node (accept == 1)
+	 * It generates assignments for the captured variables
+	 * before jumping into the block of a match arm .*/
+	Node **cap;
+	size_t ncap;
+
 	size_t refcnt;
 };
 

@@ -82,6 +82,7 @@ typedef struct Frontier {
 	Node **cap; 		/* the captured variables of the pattern of this match clause */
 	size_t ncap;
 	Dtree *final;		/* final state, shared by all Frontiers for a specific (indxed by i) match clause */
+	int hasorpat;		/* the frontier comes from a match arm that contains or-pattern */
 
 	struct Frontier *next;
 } Frontier;
@@ -460,7 +461,9 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 	case Olor:
 		next = frontierdup(fs);
 		next->next = fs->next;
+		next->hasorpat = 1;
 		fs->next = next;
+		fs->hasorpat = 1;
 		addrec(fs, pat->expr.args[1], val, path);
 		addrec(next, pat->expr.args[0], val, path);
 		break;
@@ -903,7 +906,7 @@ clearemit(Dtree *dt)
 }
 
 static int
-capeq(Node *a, Node *b)
+capcompatible(Node *a, Node *b)
 {
 	Node *pa, *pb, *va, *vb;
 
@@ -912,7 +915,7 @@ capeq(Node *a, Node *b)
 	va = a->expr.args[1];
 	vb = b->expr.args[1];
 
-	return pa->expr.did == pb->expr.did && loadeq(va, vb);
+	return pa->expr.did == pb->expr.did && tyeq(exprtype(va), exprtype(vb));
 }
 
 Dtree *
@@ -948,9 +951,18 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 			if (last->ncap != cur->ncap)
 				fatal(pat[cur->i], "number of wildcard variables in the or-patterns are not equal (%d != %d)", last->ncap, cur->ncap);
 			for (j = 0; j < cur->ncap; j++) {
-				if (!capeq(last->cap[j], cur->cap[j]))
+				if (!capcompatible(last->cap[j], cur->cap[j]))
 					fatal(pat[cur->i], "wildcard variables have different types in the or-patterns");
 			}
+		}
+		/* If the match arm does not have or-pattern, we can insert the assignements of the captures at the beginning of the associated block.
+		 * Otherwise, the captures can bind different locations with the same identifier in thehe or-patterns, and thus the assignments must be
+		 * carried out before jumping into the block.
+		 * For this reason, in the case of having or-pattern, we store the information of captures in the dtree MATCH node and delegate the
+		 * insertion of the captures assignments to the ir generation of dtree */
+		if (cur->hasorpat) {
+			cur->final->cap = cur->cap;
+			cur->final->ncap = cur->ncap;
 		} else {
 			addcapture(pat[cur->i]->match.block, cur->cap, cur->ncap);
 		}
@@ -994,6 +1006,7 @@ void
 genmatchcode(Dtree *dt, Node ***out, size_t *nout)
 {
 	Node *jmp, *eq, *fail;
+	Node *next;
 	int emit;
 	size_t i;
 
@@ -1018,12 +1031,25 @@ genmatchcode(Dtree *dt, Node ***out, size_t *nout)
 			fail = genlbl(dt->loc);
 			emit = 1;
 		}
+		if (dt->next[i]->accept && dt->next[i]->ncap > 0) {
+			next = genlbl(dt->next[i]->loc);
+		} else {
+			next = dt->next[i]->lbl;
+		}
 
 		eq = mkexpr(dt->loc, Oeq, dt->load, dt->pat[i], NULL);
 		eq->expr.type = mktype(dt->loc, Tybool);
-		jmp = mkexpr(dt->loc, Ocjmp, eq, dt->next[i]->lbl, fail, NULL);
+		jmp = mkexpr(dt->loc, Ocjmp, eq, next, fail, NULL);
 		jmp->expr.type = mktype(dt->loc, Tyvoid);
 		lappend(out, nout, jmp);
+
+		if (dt->next[i]->accept && dt->next[i]->ncap > 0) {
+			lappend(out, nout, next);
+			lcat(out, nout, dt->next[i]->cap, dt->next[i]->ncap);
+			jmp = mkexpr(dt->loc, Ojmp, dt->next[i]->lbl, NULL);
+			jmp->expr.type = mktype(dt->loc, Tyvoid);
+			lappend(out, nout, jmp);
+		}
 
 		genmatchcode(dt->next[i], out, nout);
 		if (emit)

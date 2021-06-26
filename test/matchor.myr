@@ -49,6 +49,9 @@ const main = {
 		`E (byte[:], int)
 		`F (int, std.option(int))
 		`G (int, std.option(int))
+		`H (int, int)
+		`I (int, int)
+		`J (int, (int, (int, int)))
 	;;
 
 	match `A 123
@@ -58,6 +61,24 @@ const main = {
 
 	match `G (223, `std.Some 556)
 	| `F (x, `std.Some y) || `G (x, `std.Some y): std.put("good #5 x={} y={}\n", x, y)
+	| _: std.exit(1)
+	;;
+
+	match `H (100, 200)
+	| `H (x, _) || `I (_, x):
+		std.put("#6 x={}\n", x)
+		if x != 100
+			std.exit(1)
+		;;
+	| _: std.exit(1)
+	;;
+
+	match `J (100, (200, (300, 400)))
+	| `H (x, _) || `J (_, (_, (_, x))):
+		std.put("#7 x={}\n", x)
+		if x != 400
+			std.exit(1)
+		;;
 	| _: std.exit(1)
 	;;
 
