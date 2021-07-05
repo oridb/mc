@@ -980,7 +980,7 @@ gendtree(Node *m, Node *val, Node **lbl, size_t nlbl)
 
 	for (i = 0; i < nfrontier; i++)
 		if (frontier[i]->final->refcnt == 0)
-			fatal(pat[i], "pattern matched by earlier case");
+			fatal(pat[frontier[i]->i], "pattern matched by earlier case");
 
 	if (debugopt['M'] || getenv("M")) {
 		dbgloc = strdup(getenv("M"));
