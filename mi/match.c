@@ -464,8 +464,8 @@ addrec(Frontier *fs, Node *pat, Node *val, Path *path)
 		next->hasorpat = 1;
 		fs->next = next;
 		fs->hasorpat = 1;
-		addrec(fs, pat->expr.args[1], val, path);
-		addrec(next, pat->expr.args[0], val, path);
+		addrec(fs, pat->expr.args[0], val, path);
+		addrec(next, pat->expr.args[1], val, path);
 		break;
 	case Ogap:
 		lappend(&fs->slot, &fs->nslot, mkslot(path, pat, val));
