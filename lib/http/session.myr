@@ -47,6 +47,7 @@ const freesession = {s
 	bio.close(s.f)
 	std.slfree(s.host)
 	std.slfree(s.ua)
+	std.slfree(s.srvname)
 	std.free(s)
 }
 

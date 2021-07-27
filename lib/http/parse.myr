@@ -5,6 +5,7 @@ use "types"
 
 pkg http =
 	pkglocal const parsereq		: (s : session# -> std.result(req#, err))
+	pkglocal const freereq 		: (r : req# -> void)
 	pkglocal const parseresp	: (s : session#, r : resp# -> bool)
 	pkglocal const parsechunksz	: (s : session# -> std.result(std.size, err))
 	pkglocal const parsenumber	: (str : byte[:]#, base : int -> std.option(int))
@@ -70,9 +71,29 @@ const parsereq = {s
 			std.slfree(ln)
 		;;
 	;;
+
 	-> `std.Ok std.mk(r)
 :error
 	-> `std.Err err
+}
+
+const freereq = {r
+	for hdr : r.hdrs
+		std.slfree(hdr.0)
+		std.slfree(hdr.1)
+	;;
+	std.slfree(r.hdrs)
+
+	for (k, v) : r.url.params
+		std.slfree(k)
+		std.slfree(v)
+	;;
+	std.slfree(r.url.params)
+
+	std.slfree(r.url.host)
+	std.slfree(r.url.path)
+	std.free(r.url)
+	std.free(r)
 }
 
 const parseresp = {s, r : resp#

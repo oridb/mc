@@ -41,23 +41,23 @@ const communicate = {srv, fd, fn
 	var s
 
 	s = mksrvsession(fd)
+
 	while !srv.quit
 		match parsereq(s)
 		| `std.Ok req:
 			fn(srv, s, req)
-			freereq(s)
+			freereq(req)
 		| `std.Err e:
 			break
 		;;
 	;;
+
+	freesession(s)
 	std.close(fd)
 	unref(srv)
 }
 
 const respond = {srv, s, resp
-	var sb
-
-	sb = std.mksb()
 	ioput(s, "HTTP/1.1 {} {}\r\n", resp.status, statusstr(resp.status))
 
 	if resp.enc != `Chunked
