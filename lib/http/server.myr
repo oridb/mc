@@ -43,8 +43,11 @@ const communicate = {srv, fd, fn
 	s = mksrvsession(fd)
 	while !srv.quit
 		match parsereq(s)
-		| `std.Ok req:	fn(srv, s, req)
-		| `std.Err e:	break
+		| `std.Ok req:
+			fn(srv, s, req)
+			freereq(s)
+		| `std.Err e:
+			break
 		;;
 	;;
 	std.close(fd)
@@ -56,11 +59,23 @@ const respond = {srv, s, resp
 
 	sb = std.mksb()
 	ioput(s, "HTTP/1.1 {} {}\r\n", resp.status, statusstr(resp.status))
-	ioput(s, "Content-Length: {}\r\n", resp.body.len)
-	ioput(s, "Encoding: {}\r\n", resp.enc)
+
+	if resp.enc != `Chunked
+		ioput(s, "Content-Length: {}\r\n", resp.body.len)
+	;;
+
+	match resp.enc
+	| `Length:   /* noop */
+	| `Chunked:  ioput(s, "Transfer-Encoding: chunked\r\n")
+	| `Compress: ioput(s, "Transfer-Encoding: compress\r\n")
+	| `Deflate:  ioput(s, "Transfer-Encoding: deflate\r\n")
+	| `Gzip:     ioput(s, "Transfer-Encoding: gzip\r\n")
+	;;
+
 	for (k, v) : resp.hdrs
 		ioput(s, "{}: {}\r\n", k, v)
 	;;
+
 	ioput(s, "\r\n")
 	iowrite(s, resp.body)
 	ioflush(s)
