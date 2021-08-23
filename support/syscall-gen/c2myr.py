@@ -3,7 +3,7 @@ import re
 import os
 import traceback
 import pycparser
-import StringIO
+import io
 from pycparser import c_parser, c_ast
 from pycparser.plyparser import Coord
 #from pycparser import c_parser, c_ast, parse_file
@@ -314,8 +314,8 @@ def myrtype(name, defname=None):
     return gen
 
 if __name__ == '__main__':
-    structs = StringIO.StringIO()
-    defs = StringIO.StringIO()
+    structs = io.StringIO()
+    defs = io.StringIO()
 
     prehdr = '''
 #define __builtin_va_list int
@@ -355,7 +355,7 @@ if __name__ == '__main__':
     if os.path.exists("/usr/include/x86_64-linux-gnu/sys"):
         syshdr = syshdr + ["linux/" + h for h in os.listdir("/usr/include/linux")]
     for hdr in syshdr:
-        print 'trying {}'.format(hdr)
+        print('trying {}'.format(hdr))
         if not hdr.endswith(".h"):
             continue
         try:
@@ -365,7 +365,7 @@ if __name__ == '__main__':
             pycparser.parse_file('/tmp/myr-includes.h', use_cpp=True)
             includes.append('#include <{}>'.format(hdr))
         except Exception:
-            print '...skip'
+            print('...skip')
 
     print('importing' + ' '.join(includes))
     with open('/tmp/myr-includes.h', 'w') as f:

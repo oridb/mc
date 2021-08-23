@@ -1,6 +1,6 @@
 /*
   generated-ish source
-  stitched for openbsd:6.1 arch:x64
+  stitched for openbsd:7.0 arch:x64
   edit with caution.
  */
 pkg sys =
@@ -10,6 +10,9 @@ pkg sys =
 	type intptr	= uint64/* can hold any pointer losslessly */
 	type time	= int64	/* milliseconds since epoch */
 	type pid	= int32	/* process id */
+	type uid	= int32	/* user id */
+	type key	= int32	/* sysv ipc key */
+	type id		= int32	/* id */
 	type scno	= int64	/*syscall*/
 	type fdopt	= int64	/* fd options */
 	type fd		= int32	/* fd */
@@ -26,7 +29,15 @@ pkg sys =
 	type signo	= int32
 	type sigflags	= int32
 	type sigset	= uint32
+	type clockid	= uint32
 	type msg	= void
+	type msqid_ds	= void
+	type gid	= uint32
+	
+	const Futexwait		: int = 1
+	const Futexwake		: int = 2
+	const Futexrequeue	: int = 3
+	
 	
 	type clock = union
 		`Clockrealtime
@@ -43,6 +54,11 @@ pkg sys =
 		`Waitstop int32
 	;;
 	
+	type rlimit = struct
+		cur	: uint64	/* current (soft) limit */
+		max	: uint64	/* maximum value for rlim_cur */
+	;;
+	
 	type timespec = struct
 		sec	: int64
 		nsec	: int64
@@ -53,6 +69,10 @@ pkg sys =
 		usec	: int64
 	;;
 	
+	type timezone = struct
+		minwest	: int32	/* minutes west of Greenwich */
+		dsttime	: int32	/* type of dst correction */
+	;;
 	
 	type pollfd = struct
 		fd      : fd
@@ -60,10 +80,81 @@ pkg sys =
 		revents : uint16
 	;;
 	
+	type fsid = struct
+		val	: int32[2]
+	;;
+	
+	type itimerval = struct
+		interval	: timeval	/* timer interval */
+		value		: timeval	/* current value */
+	;;
+	
 	type sigaction = struct
 		handler	: byte#	/* code pointer */
 		mask	: sigset
 		flags	: sigflags
+	;;
+	/*
+	 * Information pushed on stack when a signal is delivered.
+	 * This is used by the kernel to restore state following
+	 * execution of the signal handler.  It is also made available
+	 * to the handler to allow it to restore state properly if
+	 * a non-standard exit is performed.
+	 */
+	type sigcontext = struct
+		/* plain match trapframe */
+		rdi	: int64
+		rsi	: int64
+		rdx	: int64
+		rcx	: int64
+		r8	: int64
+		r9	: int64
+		r10	: int64
+		r11	: int64
+		r12	: int64
+		r13	: int64
+		r14	: int64
+		r15	: int64
+		rbp	: int64
+		rbx	: int64
+		rax	: int64
+		gs	: int64
+		fs	: int64
+		es	: int64
+		ds	: int64
+		trapno	: int64
+		err	: int64
+		rip	: int64
+		cs	: int64
+		rflags	: int64
+		rsp	: int64
+		ss	: int64
+	
+		fpstate	: fxsave64#
+		__pad	: int32
+		mask	: int32
+		cookie	: int64
+	;;
+	
+	type sigaltstack = struct
+		sp	: void#
+		size	: size
+		flags	: int32
+	;;
+	
+	type fxsave64 = struct
+		fcw	: int16
+		fsw	: int16
+		ftw	: int8
+		unused1	: int8
+		fop	: int16
+		rip	: int64
+		rdp	: int64
+		mxcsr	: int32
+		mxcsrmask	: int32
+		st	: int64[8][2]   /* 8 normal FP regs */
+		xmm	: int64[16][2] /* 16 SSE2 registers */
+		unused3	: int8[96]
 	;;
 	
 	const Simaxsz	= 128
@@ -272,7 +363,7 @@ pkg sys =
 	const Mfixed	: mopt = 0x10
 	const Mfile	: mopt = 0x0
 	const Manon	: mopt = 0x1000
-	const Mstack	: mopt = 0
+	const Mstack    : mopt = 0x4000
 	const Mnoreplace	: mopt = 0x0800
 	
 	/* file types */
@@ -402,14 +493,8 @@ pkg sys =
 	extern const syscall : (sc:scno, args:... -> int64)
 	extern var __cenvp : byte##
 	type dev = int32
-	type uid = uint32
-	type gid = uint32
 	type fd_mask = uint32
 	type uintptr = uint64
-	type clockid = int32
-	type id = uint32
-	type rlim = uint64
-	type key = int64
 	type shmatt = int16
 	
 	type tfork = struct
@@ -430,11 +515,6 @@ pkg sys =
 	
 	;;
 	
-	type fsid = struct
-		val	: int32[2]
-	
-	;;
-	
 	type fid = struct
 		len	: uint16
 		reserved	: uint16
@@ -445,18 +525,6 @@ pkg sys =
 	type fhandle = struct
 		fsid	: fsid
 		fid	: fid
-	
-	;;
-	
-	type timezone = struct
-		minuteswest	: int
-		dsttime	: int
-	
-	;;
-	
-	type itimerval = struct
-		interval	: timeval
-		value	: timeval
 	
 	;;
 	
@@ -478,69 +546,6 @@ pkg sys =
 	type kbind = struct
 		addr	: void#
 		size	: size
-	
-	;;
-	
-	type fxsave64 = struct
-		fcw	: uint16
-		fsw	: uint16
-		ftw	: uint8
-		unused1	: uint8
-		fop	: uint16
-		rip	: uint64
-		rdp	: uint64
-		mxcsr	: uint32
-		mxcsr_mask	: uint32
-		st	: uint64[2][8]
-		xmm	: uint64[2][16]
-		unused3	: uint8[96]
-	
-	;;
-	
-	type sigcontext = struct
-		rdi	: int64
-		rsi	: int64
-		rdx	: int64
-		rcx	: int64
-		r8	: int64
-		r9	: int64
-		r10	: int64
-		r11	: int64
-		r12	: int64
-		r13	: int64
-		r14	: int64
-		r15	: int64
-		rbp	: int64
-		rbx	: int64
-		rax	: int64
-		gs	: int64
-		fs	: int64
-		es	: int64
-		ds	: int64
-		trapno	: int64
-		err	: int64
-		rip	: int64
-		cs	: int64
-		rflags	: int64
-		rsp	: int64
-		ss	: int64
-		fpstate	: fxsave64#
-		unused	: int
-		mask	: int
-		cookie	: int64
-	
-	;;
-	
-	type rlimit = struct
-		cur	: rlim
-		max	: rlim
-	
-	;;
-	
-	type sigaltstack = struct
-		sp	: void#
-		size	: size
-		flags	: int
 	
 	;;
 	
@@ -575,25 +580,6 @@ pkg sys =
 		ctime	: time
 		ctimensec	: int64
 		internal	: void#
-	
-	;;
-	
-	type msqid_ds = struct
-		perm	: ipc_perm
-		first	: msg#
-		last	: msg#
-		cbytes	: uint64
-		qnum	: uint64
-		qbytes	: uint64
-		lspid	: pid
-		lrpid	: pid
-		stime	: time
-		pad1	: int64
-		rtime	: time
-		pad2	: int64
-		ctime	: time
-		pad3	: int64
-		pad4	: int64[4]
 	
 	;;
 	
@@ -634,6 +620,7 @@ pkg sys =
 	const Syschflags		: scno = 34
 	const Sysfchflags		: scno = 35
 	const Syssync			: scno = 36
+	const Sysmsyscall		: scno = 37
 	const Sysstat			: scno = 38
 	const Sysgetppid		: scno = 39
 	const Syslstat			: scno = 40
@@ -645,7 +632,6 @@ pkg sys =
 	const Syssigaction		: scno = 46
 	const Sysgetgid			: scno = 47
 	const Syssigprocmask		: scno = 48
-	const Sysgetlogin59		: scno = 49
 	const Syssetlogin		: scno = 50
 	const Sysacct			: scno = 51
 	const Syssigpending		: scno = 52
@@ -674,11 +660,11 @@ pkg sys =
 	const Sysmadvise		: scno = 75
 	const Sysutimes			: scno = 76
 	const Sysfutimes		: scno = 77
-	const Sysmincore		: scno = 78
 	const Sysgetgroups		: scno = 79
 	const Syssetgroups		: scno = 80
 	const Sysgetpgrp		: scno = 81
 	const Syssetpgid		: scno = 82
+	const Sysfutex			: scno = 83
 	const Sysutimensat		: scno = 84
 	const Sysfutimens		: scno = 85
 	const Syskbind			: scno = 86
@@ -708,6 +694,8 @@ pkg sys =
 	const Syspselect		: scno = 110
 	const Syssigsuspend		: scno = 111
 	const Syssendsyslog		: scno = 112
+	const Sysunveil			: scno = 114
+	const Sys__realpath		: scno = 115
 	const Sysgetsockopt		: scno = 118
 	const Systhrkill		: scno = 119
 	const Sysreadv			: scno = 120
@@ -731,6 +719,7 @@ pkg sys =
 	const Sysquotactl		: scno = 148
 	const Sysnfssvc			: scno = 155
 	const Sysgetfh			: scno = 161
+	const Sys__tmpfd		: scno = 164
 	const Syssysarch		: scno = 165
 	const Syspread			: scno = 173
 	const Syspwrite			: scno = 174
@@ -894,13 +883,13 @@ pkg sys =
 	const chflags			:  (path : byte#, flags : uint -> int)
 	const fchflags			:  (fd : int, flags : uint -> int)
 	const sync			:  ( -> void)
+	const msyscall			:  (addr : void#, len : size -> int)
 	const getppid			:  ( -> pid)
 	const fstatat			:  (fd : int, path : byte#, buf : statbuf#, flag : int -> int)
 	const getegid			:  ( -> gid)
 	const profil			:  (samples : void#, size : size, offset : uint64, scale : uint -> int)
 	const ktrace			:  (fname : byte#, ops : int, facs : int, pid : pid -> int)
 	const getgid			:  ( -> gid)
-	const getlogin59		:  (namebuf : byte#, namelen : uint -> int)
 	const setlogin			:  (namebuf : byte# -> int)
 	const acct			:  (path : byte# -> int)
 	const sigpending		:  ( -> int)
@@ -925,11 +914,11 @@ pkg sys =
 	const madvise			:  (addr : void#, len : size, behav : int -> int)
 	const utimes			:  (path : byte#, tptr : timeval# -> int)
 	const futimes			:  (fd : int, tptr : timeval# -> int)
-	const mincore			:  (addr : void#, len : size, vec : byte# -> int)
 	const getgroups			:  (gidsetsize : int, gidset : gid# -> int)
 	const setgroups			:  (gidsetsize : int, gidset : gid# -> int)
 	const getpgrp			:  ( -> int)
 	const setpgid			:  (pid : pid, pgid : pid -> int)
+	const futex			:  (f : uint32#, op : int, val : int, timeout : timespec#, g : uint32# -> int)
 	const utimensat			:  (fd : int, path : byte#, times : timespec#, flag : int -> int)
 	const futimens			:  (fd : int, times : timespec# -> int)
 	const kbind			:  (param : kbind#, psize : size, proc_cookie : int64 -> int)
@@ -942,11 +931,13 @@ pkg sys =
 	const dup3			:  (from : int, to : int, flags : int -> int)
 	const sigreturn			:  (sigcntxp : sigcontext# -> int)
 	const chflagsat			:  (fd : int, path : byte#, flags : uint, atflags : int -> int)
-	const pledge			:  (request : byte#, paths : byte## -> int)
+	const pledge			:  (promises : byte#, execpromises : byte# -> int)
 	const ppoll			:  (fds : pollfd#, nfds : uint, ts : timespec#, mask : sigset# -> int)
 	const pselect			:  (nd : int, _in : fdset#, ou : fdset#, ex : fdset#, ts : timespec#, mask : sigset# -> int)
 	const sigsuspend		:  (mask : int -> int)
-	const sendsyslog		:  (buf : void#, nbyte : size, flags : int -> int)
+	const sendsyslog		:  (buf : byte#, nbyte : size, flags : int -> int)
+	const unveil			:  (path : byte#, permissions : byte# -> int)
+	const __realpath		:  (pathname : byte#, resolved : byte# -> int)
 	const thrkill			:  (tid : pid, signum : int, tcb : void# -> int)
 	const fchown			:  (fd : int, uid : uid, gid : gid -> int)
 	const fchmod			:  (fd : int, mode : filemode -> int)
@@ -965,6 +956,7 @@ pkg sys =
 	const quotactl			:  (path : byte#, cmd : int, uid : int, arg : byte# -> int)
 	const nfssvc			:  (flag : int, argp : void# -> int)
 	const getfh			:  (fname : byte#, fhp : fhandle# -> int)
+	const __tmpfd			:  (flags : int -> int)
 	const sysarch			:  (op : int, parms : void# -> int)
 	const setgid			:  (gid : gid -> int)
 	const setegid			:  (egid : gid -> int)
@@ -1132,7 +1124,7 @@ pkg sys =
 	generic ioctl	= {fd, req, arg;	-> (syscall(Sysioctl, a(fd), a(req), a(arg)) : int64)}
 	const chdir	= {dir;	-> syscall(Syschdir, cstring(dir))}
 	const __getcwd	= {buf;	-> syscall(Sys__getcwd, a(buf), a(buf.len))}
-	const getdents	= {fd, buf;		-> (syscall(Sysgetdents, a(buf), a(buf.len)) : int64)}
+	const getdents	= {fd, buf;		-> (syscall(Sysgetdents, a(fd), a(buf), a(buf.len)) : int64)}
 	
 	/* signals */
 	const sigaction	= {sig, act, oact;	-> (syscall(Syssigaction, a(sig), a(act), a(oact)) : int)}
@@ -1338,6 +1330,9 @@ const fchflags	= {fd, flags
 const sync	= {
 	 -> (syscall(Syssync) : void)
 }
+const msyscall	= {addr, len
+	 -> (syscall(Sysmsyscall, a(addr), a(len)) : int)
+}
 const getppid	= {
 	 -> (syscall(Sysgetppid) : pid)
 }
@@ -1355,9 +1350,6 @@ const ktrace	= {fname, ops, facs, pid
 }
 const getgid	= {
 	 -> (syscall(Sysgetgid) : gid)
-}
-const getlogin59	= {namebuf, namelen
-	 -> (syscall(Sysgetlogin59, a(namebuf), a(namelen)) : int)
 }
 const setlogin	= {namebuf
 	 -> (syscall(Syssetlogin, a(namebuf)) : int)
@@ -1431,9 +1423,6 @@ const utimes	= {path, tptr
 const futimes	= {fd, tptr
 	 -> (syscall(Sysfutimes, a(fd), a(tptr)) : int)
 }
-const mincore	= {addr, len, vec
-	 -> (syscall(Sysmincore, a(addr), a(len), a(vec)) : int)
-}
 const getgroups	= {gidsetsize, gidset
 	 -> (syscall(Sysgetgroups, a(gidsetsize), a(gidset)) : int)
 }
@@ -1445,6 +1434,9 @@ const getpgrp	= {
 }
 const setpgid	= {pid, pgid
 	 -> (syscall(Syssetpgid, a(pid), a(pgid)) : int)
+}
+const futex	= {f, op, val, timeout, g
+	 -> (syscall(Sysfutex, a(f), a(op), a(val), a(timeout), a(g)) : int)
 }
 const utimensat	= {fd, path, times, flag
 	 -> (syscall(Sysutimensat, a(fd), a(path), a(times), a(flag)) : int)
@@ -1482,8 +1474,8 @@ const sigreturn	= {sigcntxp
 const chflagsat	= {fd, path, flags, atflags
 	 -> (syscall(Syschflagsat, a(fd), a(path), a(flags), a(atflags)) : int)
 }
-const pledge	= {request, paths
-	 -> (syscall(Syspledge, a(request), a(paths)) : int)
+const pledge	= {promises, execpromises
+	 -> (syscall(Syspledge, a(promises), a(execpromises)) : int)
 }
 const ppoll	= {fds, nfds, ts, mask
 	 -> (syscall(Sysppoll, a(fds), a(nfds), a(ts), a(mask)) : int)
@@ -1496,6 +1488,12 @@ const sigsuspend	= {mask
 }
 const sendsyslog	= {buf, nbyte, flags
 	 -> (syscall(Syssendsyslog, a(buf), a(nbyte), a(flags)) : int)
+}
+const unveil	= {path, permissions
+	 -> (syscall(Sysunveil, a(path), a(permissions)) : int)
+}
+const __realpath	= {pathname, resolved
+	 -> (syscall(Sys__realpath, a(pathname), a(resolved)) : int)
 }
 const thrkill	= {tid, signum, tcb
 	 -> (syscall(Systhrkill, a(tid), a(signum), a(tcb)) : int)
@@ -1550,6 +1548,9 @@ const nfssvc	= {flag, argp
 }
 const getfh	= {fname, fhp
 	 -> (syscall(Sysgetfh, a(fname), a(fhp)) : int)
+}
+const __tmpfd	= {flags
+	 -> (syscall(Sys__tmpfd, a(flags)) : int)
 }
 const sysarch	= {op, parms
 	 -> (syscall(Syssysarch, a(op), a(parms)) : int)

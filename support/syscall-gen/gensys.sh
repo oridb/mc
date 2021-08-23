@@ -42,10 +42,10 @@ touch have.txt
 
 if [ `uname` = Linux ]; then
 	hdrgen $1 $2
-	python ./c2myr.py $1 $2
+	python3 ./c2myr.py $1 $2
 	hdrgen $1 $2
 else
 	mastergen $1 $2
-	python ./c2myr.py $1 $2
+	python3 ./c2myr.py $1 $2
 	mastergen $1 $2
 fi
