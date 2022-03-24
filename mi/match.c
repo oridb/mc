@@ -158,19 +158,22 @@ structmemb(Node *n, Node *name, Type *ty)
 static Node *
 addcapture(Node *n, Node **cap, size_t ncap)
 {
-	Node **blk;
-	size_t nblk, i;
+	size_t i, j;
 
-	nblk = 0;
-	blk = NULL;
-
-	for (i = 0; i < ncap; i++)
-		lappend(&blk, &nblk, cap[i]);
-	for (i = 0; i < n->block.nstmts; i++)
-		lappend(&blk, &nblk, n->block.stmts[i]);
-	lfree(&n->block.stmts, &n->block.nstmts);
-	n->block.stmts = blk;
-	n->block.nstmts = nblk;
+	for (i = 0; i < n->block.nstmts; i++) {
+		if (n->block.stmts[i]->type != Ndecl)
+			continue;
+		for (j = 0; j < ncap; j++) {
+			assert(cap[j]->expr.op == Oasn);
+			assert(cap[j]->expr.args[0]->expr.op == Ovar);
+			assert(cap[j]->expr.args[0]->expr.isconst == 0);
+			if (n->block.stmts[i]->decl.did !=  cap[j]->expr.args[0]->expr.did)
+				continue;
+			assert(n->block.stmts[i]->decl.init == NULL);
+			assert(cap[j]->expr.args[0]->expr.op == Ovar);
+			n->block.stmts[i]->decl.init = cap[j]->expr.args[1];
+		}
+	}
 	return n;
 }
 
