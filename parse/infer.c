@@ -2290,7 +2290,7 @@ tyfix(Node *ctx, Type *orig, int noerr)
 static void
 checkcast(Node *n, Postcheck ***pc, size_t *npc)
 {
-	/* FIXME: actually verify the casts. Right now, it's ok to leave thi
+	/* FIXME: actually verify the casts. Right now, it's ok to leave this
 	 * unimplemented because bad casts get caught by the backend. */
 }
 

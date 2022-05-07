@@ -231,7 +231,7 @@ envclose(Stab *start, Stab *found, Stab *fn, Node *s)
  * not resolve namespaces -- that is the job
  * of the caller of this function.
  *
- * If a resoved name is not global, and i
+ * If a resoved name is not global, and is
  * not in the current scope, it is recorded
  * in the scope's closure.
  */

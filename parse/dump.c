@@ -146,7 +146,7 @@ dumpfilestabs(int depth, FILE *fd)
 }
 
 
-/* Outputs a node in indented tree form. This i
+/* Outputs a node in indented tree form. This is
  * not a full serialization, but mainly an aid for
  * understanding and debugging. */
 static void

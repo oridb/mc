@@ -183,7 +183,7 @@ tyspecialize(Type *orig, Tysubst *tsmap, Htab *delayed)
 	return ret;
 }
 
-/* Checks if the type 't' is generic, and if it i
+/* Checks if the type 't' is generic, and if it is
  * substitutes the types. This is here for efficiency,
  * so we don't gratuitously duplicate types */
 static Type *

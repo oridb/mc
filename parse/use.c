@@ -787,8 +787,8 @@ fixtypemappings(Stab *st)
 	/*
 	* merge duplicate definitions.
 	* This allows us to compare named types by id, instead
-	* of doing a deep walk through the type. This ability I
-	* depend on when we do type inference.
+	* of doing a deep walk through the type. This ability
+	* depends on when we do type inference.
 	*/
 	for (i = 0; i < ntypefix; i++) {
 		t = htget(tidmap, itop(typefix[i].id));
@@ -827,7 +827,7 @@ fixtraitmappings(Stab *st)
 	/*
 	* merge duplicate definitions.
 	* This allows us to compare named types by id, instead
-	* of doing a deep walk through the type. This ability i
+	* of doing a deep walk through the type. This ability is
 	* depended on when we do type inference.
 	*/
 	for (i = 0; i < ntraitfix; i++) {
