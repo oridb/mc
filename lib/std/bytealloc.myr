@@ -155,7 +155,7 @@ const bytefree = {p, sz
 		unlock(memlck)
 	;;
 	memfill(p, 0xa8, sz)
-	if (sz < Bktmax)
+	if sz <= Bktmax
 		bkt = &buckets[bktnum(sz)]
 		lock(memlck)
 		bktfree(bkt, p)
