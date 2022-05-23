@@ -418,6 +418,7 @@ tyunpickle(FILE *fd)
 	case Tyarray:
 		rdtype(fd, &ty->sub[0]);
 		ty->asize = unpickle(fd);
+		ty->nmemb = 1;
 		break;
 	case Tyslice:
 		rdtype(fd, &ty->sub[0]);
